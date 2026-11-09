@@ -1,0 +1,6 @@
+{
+  "name": "Apex Rally GP",
+  "description": "3D isometric arcade combat racer inspired by GeneRally 2 and R.C. Pro-Am with 3D elevation tracks, banked turns, dynamic weather handling, forward autocannons, oil slick hazards, and Xbox controller couch co-op.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

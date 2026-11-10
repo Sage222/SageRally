@@ -1041,13 +1041,18 @@ export const RaceViewport: React.FC<RaceViewportProps> = ({
         v.bankAngle = _queryResult.bankAngle;
         v.isInTunnel = _queryResult.isTunnel;
 
-        // Check Static Track Hazards (Mud Pits & Water Puddles)
+        // Check Static Track Hazards (Rough Ground Rubble Patches, Mud Pits & Water Puddles)
         if (builtDiorama && !v.isAirborne) {
           for (const h of builtDiorama.staticHazards) {
             const hdx = v.position.x - h.worldPos.x;
             const hdz = v.position.z - h.worldPos.z;
             if (hdx * hdx + hdz * hdz < h.radius * h.radius) {
-              v.surface = h.type === 'mud_pit' ? 'mud' : 'ice';
+              v.surface =
+                h.type === 'rough_ground'
+                  ? 'rough_ground'
+                  : h.type === 'mud_pit'
+                    ? 'mud'
+                    : 'ice';
               break;
             }
           }
@@ -1097,6 +1102,9 @@ export const RaceViewport: React.FC<RaceViewportProps> = ({
         } else if (v.surface === 'mud') {
           surfaceGrip = 0.55;
           surfaceMaxSpeedMult = 0.6;
+        } else if (v.surface === 'rough_ground') {
+          surfaceGrip = 0.62;
+          surfaceMaxSpeedMult = 0.56;
         }
 
         const totalLateralGrip = surfaceGrip * weatherGripMult;
@@ -1228,13 +1236,15 @@ export const RaceViewport: React.FC<RaceViewportProps> = ({
           }
 
           const dragCoeff =
-            v.surface === 'mud'
-              ? 2.6
-              : v.surface === 'grass'
-                ? 1.5
-                : throttleInput === 0
-                  ? 1.35
-                  : 0.35 * (1 - 0.35 * v.slipstreamCharge);
+            v.surface === 'rough_ground'
+              ? 3.2
+              : v.surface === 'mud'
+                ? 2.6
+                : v.surface === 'grass'
+                  ? 1.5
+                  : throttleInput === 0
+                    ? 1.35
+                    : 0.35 * (1 - 0.35 * v.slipstreamCharge);
           newFwdSpeed *= Math.max(0, 1 - dragCoeff * dt);
           newFwdSpeed = THREE.MathUtils.clamp(
             newFwdSpeed,
@@ -1251,6 +1261,29 @@ export const RaceViewport: React.FC<RaceViewportProps> = ({
           v.velocity.x = fwdX * newFwdSpeed + rightX * newLatSpeed;
           v.velocity.z = fwdZ * newFwdSpeed + rightZ * newLatSpeed;
 
+          // Rough ground suspension chatter & gravel spray when not dodged
+          if (v.surface === 'rough_ground' && Math.abs(newFwdSpeed) > 3.0) {
+            v.pitch += (Math.random() - 0.5) * 0.08;
+            v.roll += (Math.random() - 0.5) * 0.08;
+            if (canDrive && Math.random() < 0.35) {
+              inputManager.triggerRumble(
+                v.config.gamepadIndex,
+                55,
+                0.35,
+                0.25
+              );
+              spawnParticleBurst(
+                v.position.x - fwdX * 1.1,
+                v.position.y + 0.25,
+                v.position.z - fwdZ * 1.1,
+                2,
+                0xb45309,
+                4.2,
+                0.7
+              );
+            }
+          }
+
           // Slipstream wind-streak particles
           if (v.isSlipstreaming && Math.random() < 0.4) {
             spawnParticleBurst(
@@ -1266,7 +1299,9 @@ export const RaceViewport: React.FC<RaceViewportProps> = ({
 
           if (Math.abs(lateralSpeed) > 4.5 && Math.random() < 0.45) {
             const pColor =
-              v.surface === 'dirt' || v.surface === 'mud'
+              v.surface === 'dirt' ||
+              v.surface === 'mud' ||
+              v.surface === 'rough_ground'
                 ? 0x9a5b32
                 : propWeather === 'snow'
                   ? 0xe2e8f0

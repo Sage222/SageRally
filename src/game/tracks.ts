@@ -46,225 +46,249 @@ export interface TrackSurfaceQueryResult {
 }
 
 export const TRACK_DEFINITIONS: Record<TrackId, TrackDefinition> = {
-  // 1. GENE-RALLY INSPIRED GRAND PRIX & FOREST MOUNTAIN CIRCUIT (~5,680m)
+  // 1. GENE-RALLY INSPIRED GRAND PRIX & FOREST MOUNTAIN CIRCUIT (~5,880m)
   pinewood_gp: {
     id: 'pinewood_gp',
     name: 'GeneRally Forest GP',
-    subtitle: 'Pine Mountain Tunnel, Valley Dip & Straightaway Double Jump',
+    subtitle: 'Forest Esses, Mountain Tunnel, Valley Switchbacks & Double Jump',
     inspiration: 'GeneRally 2',
-    lengthMeters: 5680,
+    lengthMeters: 5880,
     defaultWeather: 'clear',
     difficulty: 'Circuit',
     description:
-      'A massive 4x-scale GeneRally Grand Prix tour featuring a long stadium main straight, sweeping banked bowl corners, an elevated Pine Mountain climb through a rock tunnel, a straightaway jump crest, and an infield dirt rally valley dip.',
+      'A technical GeneRally Grand Prix circuit featuring a Stadium Chicane, East Ridge S-bends, an elevated Pine Mountain rock tunnel, straightaway jump crests, infield dirt switchbacks, and dodgeable rough-ground gravel patches.',
     scenerySeed: 101,
     nodes: [
-      // South Main Stadium Straight (Collinear along Z = 150, moving +X from -140 to +140)
-      { x: -140, y: 0.5, z: 150, width: 15.0, bankAngle: 0, surface: 'asphalt', kerbLeft: true, kerbRight: true },
-      { x: -70, y: 0.5, z: 150, width: 15.0, bankAngle: 0, surface: 'asphalt', kerbLeft: false, kerbRight: false },
-      { x: 0, y: 0.5, z: 150, width: 15.0, bankAngle: 0, surface: 'asphalt', kerbLeft: false, kerbRight: false },
-      { x: 70, y: 0.5, z: 150, width: 15.0, bankAngle: 0, surface: 'boost', kerbLeft: true, kerbRight: true },
-      { x: 140, y: 0.8, z: 150, width: 15.0, bankAngle: -0.10, surface: 'asphalt', kerbLeft: true, kerbRight: true },
+      // South Main Start/Finish Straight into South-East Chicane
+      { x: -135, y: 0.5, z: 155, width: 15.0, bankAngle: 0, surface: 'asphalt', kerbLeft: true, kerbRight: true },
+      { x: -65, y: 0.5, z: 155, width: 15.0, bankAngle: 0, surface: 'asphalt', kerbLeft: false, kerbRight: false },
+      { x: -5, y: 0.5, z: 155, width: 15.0, bankAngle: -0.14, surface: 'asphalt', kerbLeft: true, kerbRight: true },
+      // South-East S-Chicane (Left-Right Esses breaking up the bottom straight)
+      { x: 45, y: 0.8, z: 122, width: 15.0, bankAngle: 0.22, surface: 'asphalt', kerbLeft: true, kerbRight: true },
+      { x: 95, y: 0.8, z: 162, width: 15.0, bankAngle: -0.24, surface: 'boost', kerbLeft: true, kerbRight: true },
+      { x: 155, y: 1.5, z: 148, width: 15.5, bankAngle: -0.26, surface: 'asphalt', kerbLeft: true, kerbRight: true },
 
-      // South-East Banked Sweeper climbing into East Ridge
-      { x: 195, y: 2.8, z: 120, width: 15.5, bankAngle: -0.28, surface: 'asphalt', kerbLeft: true, kerbRight: true },
-      { x: 220, y: 5.5, z: 60, width: 15.5, bankAngle: -0.30, surface: 'asphalt', kerbLeft: true, kerbRight: true },
-      { x: 220, y: 9.0, z: -10, width: 15.0, bankAngle: -0.18, surface: 'asphalt', kerbLeft: true, kerbRight: true },
+      // East Ridge Winding Switchbacks (Right-Left-Right technical climb)
+      { x: 215, y: 3.2, z: 105, width: 15.5, bankAngle: -0.30, surface: 'asphalt', kerbLeft: true, kerbRight: true },
+      { x: 170, y: 5.0, z: 50, width: 15.0, bankAngle: 0.26, surface: 'asphalt', kerbLeft: true, kerbRight: true },
+      { x: 225, y: 7.2, z: 0, width: 15.5, bankAngle: -0.28, surface: 'asphalt', kerbLeft: true, kerbRight: true },
+      { x: 185, y: 9.8, z: -50, width: 15.0, bankAngle: 0.20, surface: 'asphalt', kerbLeft: true, kerbRight: true },
 
       // North-East Mountain Climb & Rock Tunnel
-      { x: 205, y: 12.5, z: -80, width: 14.5, bankAngle: -0.15, surface: 'asphalt', isTunnel: true },
-      { x: 175, y: 14.0, z: -135, width: 14.5, bankAngle: -0.15, surface: 'asphalt', isTunnel: true },
-      { x: 125, y: 12.8, z: -165, width: 14.5, bankAngle: -0.12, surface: 'asphalt', isTunnel: true },
+      { x: 215, y: 12.5, z: -100, width: 14.5, bankAngle: -0.22, surface: 'asphalt', isTunnel: true },
+      { x: 185, y: 14.0, z: -150, width: 14.5, bankAngle: -0.20, surface: 'asphalt', isTunnel: true },
+      { x: 130, y: 12.8, z: -172, width: 14.5, bankAngle: -0.14, surface: 'asphalt', isTunnel: true },
 
-      // Long North Backstraight with Collinear Jump & Wide Landing Apron (Z = -170, moving -X from +65 to -165)
-      { x: 65, y: 9.5, z: -170, width: 15.0, bankAngle: 0, surface: 'asphalt', kerbLeft: true, kerbRight: true },
-      { x: 10, y: 10.8, z: -170, width: 15.5, bankAngle: 0, surface: 'jump_ramp', kerbLeft: true, kerbRight: true },
-      { x: -45, y: 5.2, z: -170, width: 16.5, bankAngle: 0, surface: 'asphalt', kerbLeft: false, kerbRight: false },
-      { x: -105, y: 4.0, z: -170, width: 15.5, bankAngle: 0, surface: 'asphalt', kerbLeft: false, kerbRight: false },
-      { x: -165, y: 3.2, z: -170, width: 15.0, bankAngle: -0.12, surface: 'asphalt', kerbLeft: true, kerbRight: true },
+      // North Straightaway Jump #1 (Collinear along Z = -172 from +75 to -60 so jump lands cleanly)
+      { x: 75, y: 9.5, z: -172, width: 15.0, bankAngle: 0, surface: 'asphalt', kerbLeft: true, kerbRight: true },
+      { x: 20, y: 10.8, z: -172, width: 15.5, bankAngle: 0, surface: 'jump_ramp', kerbLeft: true, kerbRight: true },
+      { x: -35, y: 5.2, z: -172, width: 16.5, bankAngle: 0, surface: 'asphalt', kerbLeft: false, kerbRight: false },
 
-      // North-West Banked Hairpin dropping into Infield Valley Dip
-      { x: -215, y: 1.8, z: -130, width: 15.5, bankAngle: -0.28, surface: 'asphalt', kerbLeft: true, kerbRight: true },
-      { x: -210, y: -1.5, z: -65, width: 15.5, bankAngle: -0.24, surface: 'dirt', kerbLeft: true, kerbRight: true },
+      // North-West Forest Chicane & Hairpin Complex
+      { x: -85, y: 4.2, z: -140, width: 15.5, bankAngle: 0.24, surface: 'asphalt', kerbLeft: true, kerbRight: true },
+      { x: -140, y: 3.5, z: -180, width: 15.5, bankAngle: -0.26, surface: 'asphalt', kerbLeft: true, kerbRight: true },
+      { x: -205, y: 2.2, z: -150, width: 15.5, bankAngle: -0.30, surface: 'asphalt', kerbLeft: true, kerbRight: true },
+      { x: -220, y: 0.5, z: -95, width: 15.5, bankAngle: -0.26, surface: 'dirt', kerbLeft: true, kerbRight: true },
 
-      // Infield Dirt Rally Valley Dip (y = -2.8m basin)
-      { x: -150, y: -2.8, z: -25, width: 15.0, bankAngle: 0.20, surface: 'dirt', kerbLeft: true, kerbRight: true },
-      { x: -80, y: -2.5, z: -45, width: 15.0, bankAngle: 0, surface: 'dirt', kerbLeft: false, kerbRight: false },
-      { x: -20, y: 0.5, z: -30, width: 15.0, bankAngle: 0.24, surface: 'dirt', kerbLeft: true, kerbRight: true },
-      { x: 25, y: 2.2, z: 20, width: 15.0, bankAngle: 0.26, surface: 'dirt', kerbLeft: true, kerbRight: true },
+      // Infield Dirt Rally Switchbacks & Valley Basin (y = -2.8m)
+      { x: -155, y: -2.2, z: -65, width: 15.5, bankAngle: 0.26, surface: 'dirt', kerbLeft: true, kerbRight: true },
+      { x: -185, y: -2.8, z: -10, width: 15.5, bankAngle: -0.28, surface: 'dirt', kerbLeft: true, kerbRight: true },
+      { x: -115, y: -2.5, z: 15, width: 15.0, bankAngle: 0.22, surface: 'dirt', kerbLeft: true, kerbRight: true },
+      { x: -55, y: -1.2, z: -35, width: 15.0, bankAngle: -0.26, surface: 'dirt', kerbLeft: true, kerbRight: true },
+      { x: 15, y: 1.2, z: -15, width: 15.0, bankAngle: 0.28, surface: 'dirt', kerbLeft: true, kerbRight: true },
+      { x: 45, y: 2.5, z: 35, width: 15.0, bankAngle: 0.28, surface: 'dirt', kerbLeft: true, kerbRight: true },
 
-      // Infield Return Straight (Z = 65, moving -X from -25 to -165) with Second Jump
-      { x: -25, y: 2.5, z: 65, width: 15.0, bankAngle: 0, surface: 'asphalt', kerbLeft: true, kerbRight: true },
-      { x: -80, y: 3.8, z: 65, width: 15.5, bankAngle: 0, surface: 'jump_ramp', kerbLeft: true, kerbRight: true },
-      { x: -135, y: 0.5, z: 65, width: 16.5, bankAngle: 0, surface: 'asphalt', kerbLeft: false, kerbRight: false },
-      { x: -185, y: 0.5, z: 65, width: 15.5, bankAngle: -0.15, surface: 'asphalt', kerbLeft: true, kerbRight: true },
+      // Infield Return Straight (Collinear along Z = 72 from -15 to -145 for Second Jump)
+      { x: -15, y: 2.5, z: 72, width: 15.0, bankAngle: 0, surface: 'asphalt', kerbLeft: true, kerbRight: true },
+      { x: -70, y: 3.8, z: 72, width: 15.5, bankAngle: 0, surface: 'jump_ramp', kerbLeft: true, kerbRight: true },
+      { x: -130, y: 0.5, z: 72, width: 16.5, bankAngle: 0, surface: 'asphalt', kerbLeft: false, kerbRight: false },
 
-      // South-West Banked Bowl Turn back onto Main Straight
-      { x: -220, y: 0.8, z: 105, width: 16.0, bankAngle: -0.30, surface: 'asphalt', kerbLeft: true, kerbRight: true },
-      { x: -195, y: 0.5, z: 142, width: 15.5, bankAngle: -0.22, surface: 'asphalt', kerbLeft: true, kerbRight: true },
+      // South-West Double-Apex Hairpin back onto Main Straight
+      { x: -195, y: 0.6, z: 58, width: 15.5, bankAngle: -0.28, surface: 'asphalt', kerbLeft: true, kerbRight: true },
+      { x: -225, y: 0.8, z: 108, width: 16.0, bankAngle: -0.32, surface: 'asphalt', kerbLeft: true, kerbRight: true },
+      { x: -195, y: 0.5, z: 148, width: 15.5, bankAngle: -0.22, surface: 'asphalt', kerbLeft: true, kerbRight: true },
     ],
     hazards: [
-      { t: 0.16, lateralOffset: 0.35, type: 'water_puddle', radius: 3.4 },
-      { t: 0.48, lateralOffset: -0.3, type: 'water_puddle', radius: 3.2 },
-      { t: 0.66, lateralOffset: -0.25, type: 'mud_pit', radius: 3.8 },
-      { t: 0.72, lateralOffset: 0.3, type: 'mud_pit', radius: 3.6 },
-      { t: 0.88, lateralOffset: 0.35, type: 'water_puddle', radius: 3.2 },
+      { t: 0.08, lateralOffset: 0.32, type: 'rough_ground', radius: 3.8 },
+      { t: 0.16, lateralOffset: -0.34, type: 'water_puddle', radius: 3.4 },
+      { t: 0.24, lateralOffset: 0.28, type: 'rough_ground', radius: 3.9 },
+      { t: 0.33, lateralOffset: -0.32, type: 'mud_pit', radius: 3.6 },
+      { t: 0.49, lateralOffset: -0.30, type: 'water_puddle', radius: 3.4 },
+      { t: 0.56, lateralOffset: 0.34, type: 'rough_ground', radius: 4.0 },
+      { t: 0.64, lateralOffset: -0.26, type: 'mud_pit', radius: 3.8 },
+      { t: 0.71, lateralOffset: 0.30, type: 'rough_ground', radius: 4.1 },
+      { t: 0.78, lateralOffset: -0.32, type: 'mud_pit', radius: 3.7 },
+      { t: 0.89, lateralOffset: 0.34, type: 'water_puddle', radius: 3.4 },
+      { t: 0.94, lateralOffset: -0.28, type: 'rough_ground', radius: 3.8 },
     ],
     grandstands: [
-      { x: -60, y: 0.5, z: 170, rotationY: Math.PI },
-      { x: 0, y: 0.5, z: 170, rotationY: Math.PI },
-      { x: 60, y: 0.5, z: 170, rotationY: Math.PI },
-      { x: 242, y: 5.5, z: 30, rotationY: -Math.PI / 2 },
+      { x: -75, y: 0.5, z: 174, rotationY: Math.PI },
+      { x: -15, y: 0.5, z: 174, rotationY: Math.PI },
+      { x: 244, y: 5.5, z: 25, rotationY: -Math.PI / 2 },
     ],
     mountains: [
-      { x: 185, z: -130, radius: 75, height: 28 },
+      { x: 185, z: -135, radius: 75, height: 28 },
       { x: 120, z: -215, radius: 68, height: 24 },
       { x: -245, z: -150, radius: 65, height: 20 },
     ],
   },
 
-  // 2. R.C. PRO-AM CHAMPIONSHIP CIRCUIT (~5,920m)
+  // 2. R.C. PRO-AM CHAMPIONSHIP CIRCUIT (~6,120m)
   pro_am_circuit: {
     id: 'pro_am_circuit',
     name: 'R.C. Pro-Am Championship',
-    subtitle: 'High-Banked Tarmac Bowls, Overpass Tunnel & Turbo Straights',
+    subtitle: 'Banked Hairpin Bowls, Technical Esses, Overpass Tunnel & Rough Ground',
     inspiration: 'R.C. Pro-Am',
-    lengthMeters: 5920,
+    lengthMeters: 6120,
     defaultWeather: 'rain',
     difficulty: 'Pro-Am',
     description:
-      'Inspired by classic R.C. Pro-Am tarmac combat tracks: long straightaways for forward autocannon duels, steep 20-degree banked bowl hairpins, a concrete tunnel underpass, chevron turbo zippers, and water puddle hazards.',
+      'Classic R.C. Pro-Am tarmac combat circuit packed with rapid S-chicanes, steep 20-degree banked bowl hairpins, a mountain overpass tunnel, chevron turbo zippers, rough-ground rubble patches, and water puddles.',
     scenerySeed: 202,
     nodes: [
-      // South Championship Straight (Z = 160, moving +X from -150 to +150)
-      { x: -150, y: 0.5, z: 160, width: 15.0, bankAngle: 0, surface: 'asphalt', kerbLeft: true, kerbRight: true },
-      { x: -75, y: 0.5, z: 160, width: 15.0, bankAngle: 0, surface: 'asphalt', kerbLeft: false, kerbRight: false },
-      { x: 0, y: 0.5, z: 160, width: 15.0, bankAngle: 0, surface: 'boost', kerbLeft: true, kerbRight: true },
-      { x: 75, y: 0.5, z: 160, width: 15.0, bankAngle: 0, surface: 'asphalt', kerbLeft: false, kerbRight: false },
-      { x: 150, y: 1.0, z: 160, width: 15.0, bankAngle: -0.12, surface: 'asphalt', kerbLeft: true, kerbRight: true },
+      // South Start Straight into South-East Chicane
+      { x: -145, y: 0.5, z: 162, width: 15.0, bankAngle: 0, surface: 'asphalt', kerbLeft: true, kerbRight: true },
+      { x: -70, y: 0.5, z: 162, width: 15.0, bankAngle: 0, surface: 'boost', kerbLeft: true, kerbRight: true },
+      { x: -5, y: 0.6, z: 162, width: 15.0, bankAngle: -0.18, surface: 'asphalt', kerbLeft: true, kerbRight: true },
+      { x: 55, y: 1.0, z: 128, width: 15.5, bankAngle: 0.24, surface: 'asphalt', kerbLeft: true, kerbRight: true },
+      { x: 115, y: 1.2, z: 168, width: 15.5, bankAngle: -0.26, surface: 'asphalt', kerbLeft: true, kerbRight: true },
+      { x: 175, y: 2.2, z: 150, width: 15.5, bankAngle: -0.30, surface: 'asphalt', kerbLeft: true, kerbRight: true },
 
-      // East Steep Banked Bowl Turn #1
-      { x: 215, y: 3.5, z: 125, width: 16.0, bankAngle: -0.32, surface: 'asphalt', kerbLeft: true, kerbRight: true },
-      { x: 230, y: 6.0, z: 55, width: 16.0, bankAngle: -0.34, surface: 'asphalt', kerbLeft: true, kerbRight: true },
-      { x: 190, y: 4.5, z: 5, width: 15.5, bankAngle: -0.26, surface: 'asphalt', kerbLeft: true, kerbRight: true },
+      // East Steep Banked Bowl & Switchback Hairpin
+      { x: 225, y: 4.2, z: 105, width: 16.0, bankAngle: -0.34, surface: 'asphalt', kerbLeft: true, kerbRight: true },
+      { x: 230, y: 6.0, z: 45, width: 16.0, bankAngle: -0.34, surface: 'asphalt', kerbLeft: true, kerbRight: true },
+      { x: 175, y: 4.5, z: 12, width: 15.5, bankAngle: -0.24, surface: 'asphalt', kerbLeft: true, kerbRight: true },
 
-      // Infield Straight (Z = -10, moving -X from +120 to -60) with Straightaway Jump
-      { x: 120, y: 3.2, z: -10, width: 15.0, bankAngle: 0, surface: 'asphalt', kerbLeft: true, kerbRight: true },
-      { x: 60, y: 4.8, z: -10, width: 15.5, bankAngle: 0, surface: 'jump_ramp', kerbLeft: true, kerbRight: true },
-      { x: 0, y: 0.8, z: -10, width: 16.5, bankAngle: 0, surface: 'asphalt', kerbLeft: false, kerbRight: false },
-      { x: -60, y: -1.8, z: -10, width: 15.5, bankAngle: 0, surface: 'asphalt', kerbLeft: true, kerbRight: true },
+      // Infield Straightaway Jump #1 (Collinear along Z = -8 from +120 to -10)
+      { x: 120, y: 3.2, z: -8, width: 15.0, bankAngle: 0, surface: 'asphalt', kerbLeft: true, kerbRight: true },
+      { x: 60, y: 4.8, z: -8, width: 15.5, bankAngle: 0, surface: 'jump_ramp', kerbLeft: true, kerbRight: true },
+      { x: -5, y: 0.8, z: -8, width: 16.5, bankAngle: 0, surface: 'asphalt', kerbLeft: false, kerbRight: false },
 
-      // Central Dip & Right-Hand Banked Loop heading North-East
-      { x: -110, y: -2.8, z: -45, width: 15.5, bankAngle: 0.28, surface: 'asphalt', kerbLeft: true, kerbRight: true },
-      { x: -85, y: 1.5, z: -100, width: 15.5, bankAngle: 0.28, surface: 'asphalt', kerbLeft: true, kerbRight: true },
-      { x: 10, y: 6.5, z: -110, width: 15.0, bankAngle: 0.15, surface: 'boost', kerbLeft: true, kerbRight: true },
-      { x: 110, y: 10.5, z: -110, width: 15.0, bankAngle: 0, surface: 'asphalt', kerbLeft: true, kerbRight: true },
+      // Central Corkscrew S-Bends & Valley Dip
+      { x: -65, y: -1.8, z: 22, width: 15.5, bankAngle: -0.26, surface: 'asphalt', kerbLeft: true, kerbRight: true },
+      { x: -125, y: -2.8, z: -20, width: 15.5, bankAngle: 0.28, surface: 'asphalt', kerbLeft: true, kerbRight: true },
+      { x: -95, y: 0.8, z: -78, width: 15.5, bankAngle: 0.28, surface: 'asphalt', kerbLeft: true, kerbRight: true },
+      { x: -20, y: 4.5, z: -65, width: 15.5, bankAngle: -0.24, surface: 'asphalt', kerbLeft: true, kerbRight: true },
+      { x: 35, y: 7.5, z: -115, width: 15.0, bankAngle: 0.24, surface: 'boost', kerbLeft: true, kerbRight: true },
+      { x: 125, y: 10.8, z: -105, width: 15.5, bankAngle: -0.22, surface: 'asphalt', kerbLeft: true, kerbRight: true },
 
       // North-East Mountain Climb & Overpass Tunnel
       { x: 195, y: 13.5, z: -135, width: 15.0, bankAngle: -0.28, surface: 'asphalt', kerbLeft: true, kerbRight: true },
       { x: 175, y: 14.5, z: -185, width: 15.0, bankAngle: -0.22, surface: 'asphalt', isTunnel: true },
       { x: 95, y: 13.5, z: -195, width: 15.0, bankAngle: 0, surface: 'asphalt', isTunnel: true },
-      { x: 10, y: 11.0, z: -195, width: 15.0, bankAngle: 0, surface: 'asphalt', isTunnel: true },
+      { x: 15, y: 11.0, z: -195, width: 15.0, bankAngle: 0, surface: 'asphalt', isTunnel: true },
 
-      // Long North-West Straightaway with Jump #2 (Z = -195, moving -X from -55 to -185)
-      { x: -55, y: 9.0, z: -195, width: 15.0, bankAngle: 0, surface: 'asphalt', kerbLeft: true, kerbRight: true },
-      { x: -110, y: 10.2, z: -195, width: 15.5, bankAngle: 0, surface: 'jump_ramp', kerbLeft: true, kerbRight: true },
+      // North-West Straightaway Jump #2 (Collinear along Z = -195 from -45 to -165)
+      { x: -45, y: 9.0, z: -195, width: 15.0, bankAngle: 0, surface: 'asphalt', kerbLeft: true, kerbRight: true },
+      { x: -105, y: 10.2, z: -195, width: 15.5, bankAngle: 0, surface: 'jump_ramp', kerbLeft: true, kerbRight: true },
       { x: -165, y: 4.5, z: -195, width: 16.5, bankAngle: 0, surface: 'asphalt', kerbLeft: false, kerbRight: false },
-      { x: -215, y: 3.5, z: -165, width: 15.5, bankAngle: -0.26, surface: 'asphalt', kerbLeft: true, kerbRight: true },
 
-      // West Outer Speedway Chute (X = -225, moving +Z from -100 to +115)
-      { x: -225, y: 2.0, z: -95, width: 15.0, bankAngle: 0, surface: 'asphalt', kerbLeft: true, kerbRight: true },
-      { x: -225, y: 0.5, z: -15, width: 15.0, bankAngle: 0, surface: 'boost', kerbLeft: true, kerbRight: true },
-      { x: -225, y: 0.5, z: 65, width: 15.0, bankAngle: 0, surface: 'asphalt', kerbLeft: false, kerbRight: false },
-      { x: -210, y: 0.8, z: 130, width: 16.0, bankAngle: -0.32, surface: 'asphalt', kerbLeft: true, kerbRight: true },
+      // West Coast Winding S-Curves (Replacing the straight West chute with 4 weaving turns!)
+      { x: -220, y: 3.5, z: -160, width: 15.5, bankAngle: -0.28, surface: 'asphalt', kerbLeft: true, kerbRight: true },
+      { x: -180, y: 2.2, z: -105, width: 15.5, bankAngle: 0.26, surface: 'asphalt', kerbLeft: true, kerbRight: true },
+      { x: -230, y: 1.2, z: -45, width: 15.5, bankAngle: -0.28, surface: 'boost', kerbLeft: true, kerbRight: true },
+      { x: -175, y: 0.6, z: 15, width: 15.5, bankAngle: 0.26, surface: 'asphalt', kerbLeft: true, kerbRight: true },
+      { x: -230, y: 0.5, z: 75, width: 15.5, bankAngle: -0.28, surface: 'asphalt', kerbLeft: true, kerbRight: true },
+      { x: -205, y: 0.8, z: 138, width: 16.0, bankAngle: -0.32, surface: 'asphalt', kerbLeft: true, kerbRight: true },
     ],
     hazards: [
-      { t: 0.11, lateralOffset: -0.35, type: 'water_puddle', radius: 3.5 },
-      { t: 0.24, lateralOffset: 0.35, type: 'water_puddle', radius: 3.5 },
-      { t: 0.44, lateralOffset: -0.25, type: 'water_puddle', radius: 3.8 },
-      { t: 0.58, lateralOffset: 0.3, type: 'mud_pit', radius: 3.4 },
-      { t: 0.82, lateralOffset: -0.3, type: 'water_puddle', radius: 3.6 },
-      { t: 0.91, lateralOffset: 0.35, type: 'water_puddle', radius: 3.4 },
+      { t: 0.09, lateralOffset: -0.34, type: 'rough_ground', radius: 3.8 },
+      { t: 0.16, lateralOffset: 0.32, type: 'water_puddle', radius: 3.5 },
+      { t: 0.23, lateralOffset: -0.28, type: 'rough_ground', radius: 3.8 },
+      { t: 0.36, lateralOffset: 0.32, type: 'mud_pit', radius: 3.6 },
+      { t: 0.44, lateralOffset: -0.26, type: 'water_puddle', radius: 3.8 },
+      { t: 0.52, lateralOffset: 0.30, type: 'rough_ground', radius: 4.0 },
+      { t: 0.60, lateralOffset: -0.32, type: 'mud_pit', radius: 3.6 },
+      { t: 0.78, lateralOffset: 0.34, type: 'rough_ground', radius: 3.9 },
+      { t: 0.85, lateralOffset: -0.30, type: 'water_puddle', radius: 3.6 },
+      { t: 0.92, lateralOffset: 0.28, type: 'rough_ground', radius: 3.8 },
     ],
     grandstands: [
-      { x: -70, y: 0.5, z: 180, rotationY: Math.PI },
-      { x: 10, y: 0.5, z: 180, rotationY: Math.PI },
-      { x: 90, y: 0.5, z: 180, rotationY: Math.PI },
-      { x: -246, y: 0.5, z: 25, rotationY: Math.PI / 2 },
+      { x: -80, y: 0.5, z: 182, rotationY: Math.PI },
+      { x: -10, y: 0.5, z: 182, rotationY: Math.PI },
+      { x: -250, y: 0.5, z: 65, rotationY: Math.PI / 2 },
     ],
     mountains: [
       { x: 110, z: -195, radius: 80, height: 26 },
       { x: 235, z: -155, radius: 65, height: 22 },
-      { x: -165, z: -90, radius: 55, height: 18 },
+      { x: -155, z: -90, radius: 52, height: 18 },
     ],
   },
 
-  // 3. SUPER OFF ROAD "IRONMAN" BAJA STADIUM (~5,450m)
+  // 3. SUPER OFF ROAD "IRONMAN" BAJA STADIUM (~5,750m)
   ironman_baja: {
     id: 'ironman_baja',
     name: 'Ironman Baja Stadium',
-    subtitle: 'Triple Valley Whoops, High Dirt Berms, Tabletop Jumps & Canyon Tunnel',
+    subtitle: 'Baja Hairpins, Rhythm Whoops, Tabletop Jumps, Rough Ruts & Canyon Tunnel',
     inspiration: 'Super Off Road',
-    lengthMeters: 5450,
+    lengthMeters: 5750,
     defaultWeather: 'clear',
     difficulty: 'Ironman',
     description:
-      'Tribute to Ivan "Ironman" Stewart’s Super Off Road: an epic dirt-and-stadium endurance course packed with deep rhythm valley dips (whoops), high-banked dirt berms, straightaway tabletop jumps, mud bogs, and a canyon arch tunnel.',
+      'Tribute to Ivan "Ironman" Stewart’s Super Off Road: an off-road dirt stadium packed with tight Baja switchback berms, deep rhythm valley dips, straightaway tabletop jumps, rough boulder-strewn ground, and a canyon tunnel.',
     scenerySeed: 303,
     nodes: [
-      // Stadium Start Straight (Z = 155, moving +X from -140 to +130)
+      // Stadium Start Straight & Tabletop Jump #1 (Collinear along Z = 155 from -140 to +85)
       { x: -140, y: 0.5, z: 155, width: 15.5, bankAngle: 0, surface: 'asphalt', kerbLeft: true, kerbRight: true },
       { x: -65, y: 0.5, z: 155, width: 15.5, bankAngle: 0, surface: 'asphalt', kerbLeft: false, kerbRight: false },
-      { x: 15, y: 1.8, z: 155, width: 16.0, bankAngle: 0, surface: 'jump_ramp', kerbLeft: true, kerbRight: true },
-      { x: 75, y: 0.4, z: 155, width: 16.5, bankAngle: 0, surface: 'dirt', kerbLeft: false, kerbRight: false },
-      { x: 140, y: 0.8, z: 155, width: 16.0, bankAngle: -0.15, surface: 'dirt', kerbLeft: true, kerbRight: true },
+      { x: 10, y: 1.8, z: 155, width: 16.0, bankAngle: 0, surface: 'jump_ramp', kerbLeft: true, kerbRight: true },
+      { x: 70, y: 0.4, z: 155, width: 16.5, bankAngle: 0, surface: 'dirt', kerbLeft: false, kerbRight: false },
 
-      // East High-Banked Dirt Berm
-      { x: 205, y: 3.8, z: 115, width: 16.5, bankAngle: -0.34, surface: 'dirt', kerbLeft: true, kerbRight: true },
-      { x: 220, y: 5.2, z: 40, width: 16.5, bankAngle: -0.32, surface: 'dirt', kerbLeft: true, kerbRight: true },
+      // South-East Baja Berm S-Hook
+      { x: 135, y: 1.2, z: 125, width: 16.0, bankAngle: 0.26, surface: 'dirt', kerbLeft: true, kerbRight: true },
+      { x: 195, y: 3.5, z: 145, width: 16.5, bankAngle: -0.34, surface: 'dirt', kerbLeft: true, kerbRight: true },
+      { x: 228, y: 5.0, z: 90, width: 16.5, bankAngle: -0.34, surface: 'dirt', kerbLeft: true, kerbRight: true },
+      { x: 175, y: 3.2, z: 45, width: 16.0, bankAngle: 0.28, surface: 'dirt', kerbLeft: true, kerbRight: true },
 
-      // East Rhythm Section: Super Off Road Triple Valley Dips (Collinear along X = 215, moving -Z)
-      { x: 215, y: -2.6, z: -20, width: 15.5, bankAngle: 0, surface: 'dirt' },
-      { x: 215, y: 3.4, z: -65, width: 15.5, bankAngle: 0, surface: 'dirt' },
-      { x: 215, y: -3.0, z: -110, width: 15.5, bankAngle: 0, surface: 'dirt' },
-      { x: 200, y: 6.5, z: -160, width: 15.5, bankAngle: -0.24, surface: 'dirt', kerbLeft: true, kerbRight: true },
+      // East Rhythm Section & Winding Canyon Climb
+      { x: 225, y: -2.4, z: -5, width: 15.5, bankAngle: -0.28, surface: 'dirt', kerbLeft: true, kerbRight: true },
+      { x: 180, y: 3.4, z: -55, width: 15.5, bankAngle: 0.26, surface: 'dirt', kerbLeft: true, kerbRight: true },
+      { x: 225, y: -2.8, z: -105, width: 15.5, bankAngle: -0.28, surface: 'dirt', kerbLeft: true, kerbRight: true },
+      { x: 200, y: 6.5, z: -158, width: 15.5, bankAngle: -0.26, surface: 'dirt', kerbLeft: true, kerbRight: true },
 
       // North Red-Rock Canyon Tunnel
       { x: 140, y: 11.5, z: -185, width: 15.0, bankAngle: -0.15, surface: 'dirt', isTunnel: true },
       { x: 65, y: 13.0, z: -185, width: 15.0, bankAngle: 0, surface: 'dirt', isTunnel: true },
       { x: -10, y: 11.5, z: -185, width: 15.0, bankAngle: 0, surface: 'dirt', isTunnel: true },
 
-      // North Straightaway Tabletop Launch (Z = -185, moving -X from -65 to -185)
-      { x: -65, y: 9.5, z: -185, width: 15.5, bankAngle: 0, surface: 'dirt', kerbLeft: true, kerbRight: true },
+      // North Straightaway Tabletop Launch (Collinear along Z = -185 from -60 to -170)
+      { x: -60, y: 9.5, z: -185, width: 15.5, bankAngle: 0, surface: 'dirt', kerbLeft: true, kerbRight: true },
       { x: -115, y: 10.8, z: -185, width: 16.0, bankAngle: 0, surface: 'jump_ramp', kerbLeft: true, kerbRight: true },
       { x: -170, y: 4.2, z: -185, width: 17.0, bankAngle: 0, surface: 'dirt', kerbLeft: false, kerbRight: false },
 
-      // North-West Berm into Infield S-Bends
-      { x: -220, y: 2.5, z: -140, width: 16.5, bankAngle: -0.32, surface: 'dirt', kerbLeft: true, kerbRight: true },
-      { x: -205, y: -1.8, z: -70, width: 16.0, bankAngle: -0.25, surface: 'dirt', kerbLeft: true, kerbRight: true },
-      { x: -125, y: -3.2, z: -35, width: 16.0, bankAngle: 0.26, surface: 'dirt', kerbLeft: true, kerbRight: true },
-      { x: -45, y: 1.5, z: -60, width: 15.5, bankAngle: 0.28, surface: 'dirt', kerbLeft: true, kerbRight: true },
-      { x: 35, y: 3.0, z: -15, width: 15.5, bankAngle: 0.28, surface: 'dirt', kerbLeft: true, kerbRight: true },
-      { x: 15, y: 1.2, z: 55, width: 15.5, bankAngle: 0.24, surface: 'boost', kerbLeft: true, kerbRight: true },
+      // North-West Berm into Technical Infield Switchbacks (5 tight off-road corners)
+      { x: -222, y: 2.5, z: -140, width: 16.5, bankAngle: -0.32, surface: 'dirt', kerbLeft: true, kerbRight: true },
+      { x: -175, y: -1.2, z: -90, width: 16.0, bankAngle: 0.28, surface: 'dirt', kerbLeft: true, kerbRight: true },
+      { x: -220, y: -2.4, z: -35, width: 16.0, bankAngle: -0.30, surface: 'dirt', kerbLeft: true, kerbRight: true },
+      { x: -135, y: -3.2, z: -15, width: 16.0, bankAngle: 0.26, surface: 'dirt', kerbLeft: true, kerbRight: true },
+      { x: -65, y: 1.2, z: -65, width: 15.5, bankAngle: -0.28, surface: 'dirt', kerbLeft: true, kerbRight: true },
+      { x: 15, y: 3.0, z: -35, width: 15.5, bankAngle: 0.28, surface: 'dirt', kerbLeft: true, kerbRight: true },
+      { x: 55, y: 2.2, z: 20, width: 15.5, bankAngle: 0.28, surface: 'boost', kerbLeft: true, kerbRight: true },
+      { x: -5, y: -1.5, z: 68, width: 16.0, bankAngle: 0.22, surface: 'dirt', kerbLeft: true, kerbRight: true },
 
-      // Infield Mud Bog Valley & West Hairpin Return
-      { x: -75, y: -2.4, z: 65, width: 16.0, bankAngle: 0, surface: 'dirt' },
-      { x: -165, y: -1.5, z: 60, width: 16.0, bankAngle: -0.22, surface: 'dirt', kerbLeft: true, kerbRight: true },
-      { x: -220, y: 0.8, z: 105, width: 16.5, bankAngle: -0.34, surface: 'dirt', kerbLeft: true, kerbRight: true },
+      // Infield Mud Bog Chicane & West Hairpin Return
+      { x: -75, y: -2.4, z: 42, width: 16.0, bankAngle: -0.24, surface: 'dirt', kerbLeft: true, kerbRight: true },
+      { x: -145, y: -1.8, z: 82, width: 16.0, bankAngle: 0.24, surface: 'dirt', kerbLeft: true, kerbRight: true },
+      { x: -210, y: 0.2, z: 62, width: 16.5, bankAngle: -0.30, surface: 'dirt', kerbLeft: true, kerbRight: true },
+      { x: -225, y: 0.8, z: 112, width: 16.5, bankAngle: -0.34, surface: 'dirt', kerbLeft: true, kerbRight: true },
       { x: -195, y: 0.5, z: 148, width: 16.0, bankAngle: -0.22, surface: 'asphalt', kerbLeft: true, kerbRight: true },
     ],
     hazards: [
-      { t: 0.18, lateralOffset: -0.25, type: 'mud_pit', radius: 4.2 },
-      { t: 0.34, lateralOffset: 0.25, type: 'water_puddle', radius: 3.8 },
-      { t: 0.62, lateralOffset: -0.3, type: 'mud_pit', radius: 4.2 },
-      { t: 0.71, lateralOffset: 0.3, type: 'mud_pit', radius: 4.0 },
-      { t: 0.86, lateralOffset: 0.0, type: 'mud_pit', radius: 4.4 },
+      { t: 0.14, lateralOffset: -0.32, type: 'rough_ground', radius: 4.2 },
+      { t: 0.21, lateralOffset: 0.30, type: 'mud_pit', radius: 4.0 },
+      { t: 0.29, lateralOffset: -0.28, type: 'rough_ground', radius: 4.0 },
+      { t: 0.36, lateralOffset: 0.28, type: 'water_puddle', radius: 3.8 },
+      { t: 0.55, lateralOffset: -0.32, type: 'rough_ground', radius: 4.2 },
+      { t: 0.62, lateralOffset: 0.30, type: 'mud_pit', radius: 4.2 },
+      { t: 0.69, lateralOffset: -0.28, type: 'rough_ground', radius: 4.0 },
+      { t: 0.76, lateralOffset: 0.32, type: 'mud_pit', radius: 4.0 },
+      { t: 0.84, lateralOffset: -0.26, type: 'rough_ground', radius: 4.2 },
+      { t: 0.91, lateralOffset: 0.30, type: 'mud_pit', radius: 4.0 },
     ],
     grandstands: [
       { x: -80, y: 0.5, z: 175, rotationY: Math.PI },
       { x: -10, y: 0.5, z: 175, rotationY: Math.PI },
-      { x: 60, y: 0.5, z: 175, rotationY: Math.PI },
-      { x: 242, y: 3.8, z: 80, rotationY: -Math.PI / 2 },
+      { x: 248, y: 5.0, z: 90, rotationY: -Math.PI / 2 },
     ],
     mountains: [
       { x: 65, z: -185, radius: 85, height: 28 },
@@ -273,66 +297,78 @@ export const TRACK_DEFINITIONS: Record<TrackId, TrackDefinition> = {
     ],
   },
 
-  // 4. ALPINE GLACIER SWITCHBACKS (~6,240m)
+  // 4. ALPINE GLACIER SWITCHBACKS (~6,420m)
   alpine_pass: {
     id: 'alpine_pass',
     name: 'Alpine Glacier Switchbacks',
-    subtitle: 'Summit Climb, Glacier Ice Tunnel, Ski-Jump Straight & Valley Basin',
+    subtitle: 'Mountain Serpentine Climb, Glacier Tunnel, Ski-Jump & Frozen Hairpins',
     inspiration: 'GeneRally + Rally',
-    lengthMeters: 6240,
+    lengthMeters: 6420,
     defaultWeather: 'snow',
     difficulty: 'Alpine',
     description:
-      'High-altitude alpine rally marathon ascending 16 meters to a snow-capped summit, boring through a crystalline glacier tunnel, launching off a straightaway ski-jump crest, and carving through banked valley switchbacks.',
+      'High-altitude alpine rally marathon ascending a serpentine mountain pass to 16.5 meters, boring through a glacier tunnel, launching off a straightaway ski-jump crest, and weaving through frozen valley hairpins and rough rock-slide patches.',
     scenerySeed: 404,
     nodes: [
-      // Valley Floor Main Straight (Z = 165, moving +X from -145 to +145)
-      { x: -145, y: 0.5, z: 165, width: 14.5, bankAngle: 0, surface: 'asphalt', kerbLeft: true, kerbRight: true },
-      { x: -70, y: 0.5, z: 165, width: 14.5, bankAngle: 0, surface: 'asphalt', kerbLeft: false, kerbRight: false },
-      { x: 0, y: 0.5, z: 165, width: 14.5, bankAngle: 0, surface: 'asphalt', kerbLeft: false, kerbRight: false },
-      { x: 75, y: 0.8, z: 165, width: 14.5, bankAngle: 0, surface: 'boost', kerbLeft: true, kerbRight: true },
-      { x: 145, y: 2.0, z: 165, width: 14.5, bankAngle: -0.14, surface: 'asphalt', kerbLeft: true, kerbRight: true },
+      // Valley Floor Main Straight into South-East Slalom Esses
+      { x: -140, y: 0.5, z: 165, width: 14.5, bankAngle: 0, surface: 'asphalt', kerbLeft: true, kerbRight: true },
+      { x: -65, y: 0.5, z: 165, width: 14.5, bankAngle: 0, surface: 'asphalt', kerbLeft: false, kerbRight: false },
+      { x: 5, y: 0.6, z: 165, width: 14.5, bankAngle: -0.18, surface: 'boost', kerbLeft: true, kerbRight: true },
+      { x: 65, y: 1.2, z: 132, width: 15.0, bankAngle: 0.24, surface: 'asphalt', kerbLeft: true, kerbRight: true },
+      { x: 125, y: 2.0, z: 168, width: 15.0, bankAngle: -0.26, surface: 'asphalt', kerbLeft: true, kerbRight: true },
 
-      // East Mountain Ascent (climbing from y = 2m to y = 16m)
-      { x: 210, y: 5.5, z: 125, width: 15.0, bankAngle: -0.28, surface: 'asphalt', kerbLeft: true, kerbRight: true },
-      { x: 230, y: 9.5, z: 50, width: 15.0, bankAngle: -0.26, surface: 'asphalt', kerbLeft: true, kerbRight: true },
-      { x: 225, y: 13.5, z: -35, width: 14.5, bankAngle: -0.20, surface: 'asphalt', kerbLeft: true, kerbRight: true },
-      { x: 205, y: 16.0, z: -115, width: 14.5, bankAngle: -0.26, surface: 'ice', kerbLeft: true, kerbRight: true },
+      // East Mountain Serpentine Ascent (4 switchback bends climbing from y = 2m to y = 16m)
+      { x: 195, y: 4.5, z: 135, width: 15.0, bankAngle: -0.30, surface: 'asphalt', kerbLeft: true, kerbRight: true },
+      { x: 230, y: 7.2, z: 80, width: 15.0, bankAngle: -0.28, surface: 'asphalt', kerbLeft: true, kerbRight: true },
+      { x: 180, y: 9.8, z: 25, width: 14.5, bankAngle: 0.26, surface: 'asphalt', kerbLeft: true, kerbRight: true },
+      { x: 230, y: 12.8, z: -30, width: 14.5, bankAngle: -0.28, surface: 'asphalt', kerbLeft: true, kerbRight: true },
+      { x: 185, y: 15.0, z: -85, width: 14.5, bankAngle: 0.24, surface: 'ice', kerbLeft: true, kerbRight: true },
+      { x: 215, y: 16.0, z: -135, width: 14.5, bankAngle: -0.28, surface: 'ice', kerbLeft: true, kerbRight: true },
 
       // Summit Glacier Ice Tunnel
-      { x: 150, y: 16.5, z: -175, width: 14.5, bankAngle: -0.15, surface: 'ice', isTunnel: true },
+      { x: 155, y: 16.5, z: -178, width: 14.5, bankAngle: -0.15, surface: 'ice', isTunnel: true },
       { x: 75, y: 16.5, z: -190, width: 14.5, bankAngle: 0, surface: 'ice', isTunnel: true },
       { x: 0, y: 15.5, z: -190, width: 14.5, bankAngle: 0, surface: 'ice', isTunnel: true },
 
-      // Long Straightaway Alpine Ski-Jump & Wide Landing Runway (Z = -190, moving -X from -55 to -185)
+      // Straightaway Alpine Ski-Jump (Collinear along Z = -190 from -55 to -165)
       { x: -55, y: 13.5, z: -190, width: 15.0, bankAngle: 0, surface: 'asphalt', kerbLeft: true, kerbRight: true },
       { x: -105, y: 14.6, z: -190, width: 15.5, bankAngle: 0, surface: 'jump_ramp', kerbLeft: true, kerbRight: true },
       { x: -165, y: 7.5, z: -190, width: 16.5, bankAngle: 0, surface: 'asphalt', kerbLeft: false, kerbRight: false },
-      { x: -215, y: 5.5, z: -155, width: 15.5, bankAngle: -0.28, surface: 'asphalt', kerbLeft: true, kerbRight: true },
 
       // West Switchback Hairpins descending into Frozen Basin
-      { x: -210, y: 3.0, z: -85, width: 15.0, bankAngle: -0.26, surface: 'dirt', kerbLeft: true, kerbRight: true },
-      { x: -120, y: 1.0, z: -65, width: 15.0, bankAngle: 0.28, surface: 'dirt', kerbLeft: true, kerbRight: true },
-      { x: -40, y: -1.5, z: -90, width: 15.0, bankAngle: 0.28, surface: 'ice', kerbLeft: true, kerbRight: true },
-      { x: 40, y: -3.0, z: -45, width: 15.0, bankAngle: 0.28, surface: 'ice', kerbLeft: true, kerbRight: true },
-      { x: 20, y: -2.2, z: 30, width: 15.0, bankAngle: 0.26, surface: 'dirt', kerbLeft: true, kerbRight: true },
+      { x: -220, y: 5.5, z: -155, width: 15.5, bankAngle: -0.28, surface: 'asphalt', kerbLeft: true, kerbRight: true },
+      { x: -210, y: 3.0, z: -90, width: 15.0, bankAngle: -0.26, surface: 'dirt', kerbLeft: true, kerbRight: true },
+      { x: -130, y: 1.2, z: -55, width: 15.0, bankAngle: 0.28, surface: 'dirt', kerbLeft: true, kerbRight: true },
+      { x: -165, y: -0.5, z: 0, width: 15.0, bankAngle: -0.28, surface: 'dirt', kerbLeft: true, kerbRight: true },
+      { x: -85, y: -1.8, z: -25, width: 15.0, bankAngle: 0.26, surface: 'ice', kerbLeft: true, kerbRight: true },
+      { x: -20, y: -2.8, z: -85, width: 15.0, bankAngle: -0.26, surface: 'ice', kerbLeft: true, kerbRight: true },
+      { x: 50, y: -3.0, z: -45, width: 15.0, bankAngle: 0.28, surface: 'ice', kerbLeft: true, kerbRight: true },
+      { x: 35, y: -1.8, z: 25, width: 15.0, bankAngle: 0.26, surface: 'dirt', kerbLeft: true, kerbRight: true },
 
-      // Valley Floor Straight with Jump #2 (Z = 60, moving -X from -40 to -185)
-      { x: -40, y: 0.5, z: 60, width: 15.0, bankAngle: 0, surface: 'asphalt', kerbLeft: true, kerbRight: true },
-      { x: -95, y: 2.0, z: 60, width: 15.5, bankAngle: 0, surface: 'jump_ramp', kerbLeft: true, kerbRight: true },
-      { x: -155, y: -1.0, z: 60, width: 16.5, bankAngle: 0, surface: 'asphalt', kerbLeft: false, kerbRight: false },
+      // Valley Floor Straight with Jump #2 (Collinear along Z = 65 from -25 to -150)
+      { x: -25, y: 0.5, z: 65, width: 15.0, bankAngle: 0, surface: 'asphalt', kerbLeft: true, kerbRight: true },
+      { x: -85, y: 2.0, z: 65, width: 15.5, bankAngle: 0, surface: 'jump_ramp', kerbLeft: true, kerbRight: true },
+      { x: -150, y: -1.0, z: 65, width: 16.5, bankAngle: 0, surface: 'asphalt', kerbLeft: false, kerbRight: false },
+
+      // South-West Hairpin Complex
       { x: -215, y: 0.2, z: 95, width: 15.5, bankAngle: -0.30, surface: 'asphalt', kerbLeft: true, kerbRight: true },
       { x: -200, y: 0.5, z: 150, width: 15.0, bankAngle: -0.24, surface: 'asphalt', kerbLeft: true, kerbRight: true },
     ],
     hazards: [
-      { t: 0.22, lateralOffset: -0.3, type: 'water_puddle', radius: 3.4 },
-      { t: 0.64, lateralOffset: 0.25, type: 'mud_pit', radius: 3.6 },
-      { t: 0.74, lateralOffset: -0.3, type: 'water_puddle', radius: 3.8 },
-      { t: 0.85, lateralOffset: 0.3, type: 'mud_pit', radius: 3.6 },
+      { t: 0.10, lateralOffset: 0.32, type: 'rough_ground', radius: 3.8 },
+      { t: 0.18, lateralOffset: -0.30, type: 'water_puddle', radius: 3.5 },
+      { t: 0.26, lateralOffset: 0.30, type: 'rough_ground', radius: 3.8 },
+      { t: 0.35, lateralOffset: -0.28, type: 'water_puddle', radius: 3.6 },
+      { t: 0.54, lateralOffset: 0.32, type: 'rough_ground', radius: 4.0 },
+      { t: 0.62, lateralOffset: -0.28, type: 'mud_pit', radius: 3.8 },
+      { t: 0.69, lateralOffset: 0.30, type: 'rough_ground', radius: 3.9 },
+      { t: 0.76, lateralOffset: -0.30, type: 'water_puddle', radius: 3.8 },
+      { t: 0.84, lateralOffset: 0.32, type: 'mud_pit', radius: 3.6 },
+      { t: 0.93, lateralOffset: -0.30, type: 'rough_ground', radius: 3.8 },
     ],
     grandstands: [
-      { x: -50, y: 0.5, z: 185, rotationY: Math.PI },
-      { x: 30, y: 0.5, z: 185, rotationY: Math.PI },
+      { x: -75, y: 0.5, z: 185, rotationY: Math.PI },
+      { x: -5, y: 0.5, z: 185, rotationY: Math.PI },
     ],
     mountains: [
       { x: 80, z: -190, radius: 92, height: 32 },
@@ -342,76 +378,86 @@ export const TRACK_DEFINITIONS: Record<TrackId, TrackDefinition> = {
     ],
   },
 
-  // 5. THUNDER VALLEY ENDURANCE (~6,100m)
+  // 5. THUNDER VALLEY ENDURANCE (~6,350m)
   thunder_valley: {
     id: 'thunder_valley',
     name: 'Thunder Valley Endurance',
-    subtitle: 'Twin Viaduct Tunnels, Canyon Gorge Dip & High-Speed Banking',
+    subtitle: 'Twin Viaduct Tunnels, Canyon Gorge Switchbacks & High-Speed Banking',
     inspiration: 'R.C. Pro-Am + Off Road',
-    lengthMeters: 6100,
+    lengthMeters: 6350,
     defaultWeather: 'clear',
     difficulty: 'Endurance',
     description:
-      'Fast perimeter speedway fused with a deep canyon infield: features twin mountain tunnels, a -3.5m canyon gorge dip, 20-degree banked high-speed sweepers, and two dead-straight launch ramps.',
+      'Grand Prix finale combining banked tarmac sweepers, a South-East chicane, twin mountain tunnels, a winding canyon gorge infield with rough-ground boulder patches, and two straightaway launch ramps.',
     scenerySeed: 505,
     nodes: [
-      // South Speedway Straight (Z = 160, moving +X from -150 to +150)
-      { x: -150, y: 0.5, z: 160, width: 15.5, bankAngle: 0, surface: 'asphalt', kerbLeft: true, kerbRight: true },
-      { x: -75, y: 0.5, z: 160, width: 15.5, bankAngle: 0, surface: 'asphalt', kerbLeft: false, kerbRight: false },
-      { x: 0, y: 0.5, z: 160, width: 15.5, bankAngle: 0, surface: 'boost', kerbLeft: true, kerbRight: true },
-      { x: 75, y: 0.5, z: 160, width: 15.5, bankAngle: 0, surface: 'asphalt', kerbLeft: false, kerbRight: false },
-      { x: 150, y: 1.2, z: 160, width: 15.5, bankAngle: -0.15, surface: 'asphalt', kerbLeft: true, kerbRight: true },
+      // South Speedway Straight into Bus-Stop Chicane
+      { x: -145, y: 0.5, z: 162, width: 15.5, bankAngle: 0, surface: 'asphalt', kerbLeft: true, kerbRight: true },
+      { x: -70, y: 0.5, z: 162, width: 15.5, bankAngle: 0, surface: 'boost', kerbLeft: true, kerbRight: true },
+      { x: 0, y: 0.6, z: 162, width: 15.5, bankAngle: -0.18, surface: 'asphalt', kerbLeft: true, kerbRight: true },
+      { x: 60, y: 1.2, z: 126, width: 15.5, bankAngle: 0.26, surface: 'asphalt', kerbLeft: true, kerbRight: true },
+      { x: 120, y: 1.5, z: 166, width: 15.5, bankAngle: -0.26, surface: 'asphalt', kerbLeft: true, kerbRight: true },
+      { x: 180, y: 2.5, z: 145, width: 16.0, bankAngle: -0.30, surface: 'asphalt', kerbLeft: true, kerbRight: true },
 
       // East Banked Speedway Turn & Tunnel #1
-      { x: 215, y: 4.5, z: 115, width: 16.0, bankAngle: -0.32, surface: 'asphalt', kerbLeft: true, kerbRight: true },
-      { x: 230, y: 8.5, z: 35, width: 15.5, bankAngle: -0.22, surface: 'asphalt', isTunnel: true },
-      { x: 230, y: 11.0, z: -45, width: 15.5, bankAngle: -0.15, surface: 'asphalt', isTunnel: true },
+      { x: 225, y: 5.0, z: 95, width: 16.0, bankAngle: -0.32, surface: 'asphalt', kerbLeft: true, kerbRight: true },
+      { x: 230, y: 8.5, z: 25, width: 15.5, bankAngle: -0.22, surface: 'asphalt', isTunnel: true },
+      { x: 230, y: 11.0, z: -50, width: 15.5, bankAngle: -0.15, surface: 'asphalt', isTunnel: true },
       { x: 215, y: 12.5, z: -125, width: 15.5, bankAngle: -0.28, surface: 'asphalt', kerbLeft: true, kerbRight: true },
 
-      // North Straightaway with Jump #1 (Z = -180, moving -X from +150 to -150)
+      // North Straightaway Jump #1 (Collinear along Z = -180 from +150 to +15)
       { x: 150, y: 11.5, z: -180, width: 15.5, bankAngle: 0, surface: 'asphalt', kerbLeft: true, kerbRight: true },
       { x: 85, y: 12.8, z: -180, width: 16.0, bankAngle: 0, surface: 'jump_ramp', kerbLeft: true, kerbRight: true },
-      { x: 20, y: 6.5, z: -180, width: 17.0, bankAngle: 0, surface: 'asphalt', kerbLeft: false, kerbRight: false },
-      { x: -55, y: 5.5, z: -180, width: 15.5, bankAngle: 0, surface: 'boost', kerbLeft: true, kerbRight: true },
-      { x: -135, y: 6.0, z: -180, width: 15.5, bankAngle: 0, surface: 'asphalt', kerbLeft: true, kerbRight: true },
+      { x: 15, y: 6.5, z: -180, width: 17.0, bankAngle: 0, surface: 'asphalt', kerbLeft: false, kerbRight: false },
+
+      // North-Central S-Chicane before Tunnel #2
+      { x: -45, y: 5.5, z: -142, width: 15.5, bankAngle: 0.26, surface: 'boost', kerbLeft: true, kerbRight: true },
+      { x: -110, y: 6.0, z: -185, width: 15.5, bankAngle: -0.26, surface: 'asphalt', kerbLeft: true, kerbRight: true },
+      { x: -170, y: 7.2, z: -175, width: 15.5, bankAngle: -0.26, surface: 'asphalt', kerbLeft: true, kerbRight: true },
 
       // North-West Mountain Tunnel #2
-      { x: -205, y: 8.0, z: -145, width: 15.0, bankAngle: -0.26, surface: 'asphalt', isTunnel: true },
-      { x: -225, y: 6.5, z: -75, width: 15.0, bankAngle: -0.22, surface: 'asphalt', isTunnel: true },
+      { x: -215, y: 8.0, z: -135, width: 15.0, bankAngle: -0.26, surface: 'asphalt', isTunnel: true },
+      { x: -225, y: 6.5, z: -65, width: 15.0, bankAngle: -0.22, surface: 'asphalt', isTunnel: true },
 
-      // Deep Canyon Gorge Dip (dropping to y = -3.4m)
-      { x: -175, y: -1.5, z: -20, width: 15.5, bankAngle: 0.24, surface: 'dirt', kerbLeft: true, kerbRight: true },
-      { x: -100, y: -3.4, z: -45, width: 16.0, bankAngle: 0, surface: 'dirt' },
-      { x: -15, y: -3.2, z: -45, width: 16.0, bankAngle: 0, surface: 'dirt' },
-      { x: 65, y: -1.0, z: -20, width: 15.5, bankAngle: 0.28, surface: 'dirt', kerbLeft: true, kerbRight: true },
-      { x: 80, y: 2.5, z: 45, width: 15.5, bankAngle: 0.28, surface: 'dirt', kerbLeft: true, kerbRight: true },
+      // Deep Canyon Gorge Winding Switchbacks (dropping to y = -3.4m)
+      { x: -170, y: -1.2, z: -15, width: 15.5, bankAngle: 0.26, surface: 'dirt', kerbLeft: true, kerbRight: true },
+      { x: -125, y: -3.2, z: -68, width: 16.0, bankAngle: -0.28, surface: 'dirt', kerbLeft: true, kerbRight: true },
+      { x: -55, y: -3.4, z: -20, width: 16.0, bankAngle: 0.28, surface: 'dirt', kerbLeft: true, kerbRight: true },
+      { x: 15, y: -2.8, z: -65, width: 16.0, bankAngle: -0.28, surface: 'dirt', kerbLeft: true, kerbRight: true },
+      { x: 80, y: -0.5, z: -15, width: 15.5, bankAngle: 0.28, surface: 'dirt', kerbLeft: true, kerbRight: true },
+      { x: 85, y: 2.5, z: 45, width: 15.5, bankAngle: 0.28, surface: 'dirt', kerbLeft: true, kerbRight: true },
 
-      // Infield Straightaway with Jump #2 (Z = 70, moving -X from +15 to -185)
-      { x: 15, y: 2.8, z: 70, width: 15.5, bankAngle: 0, surface: 'asphalt', kerbLeft: true, kerbRight: true },
-      { x: -50, y: 4.2, z: 70, width: 16.0, bankAngle: 0, surface: 'jump_ramp', kerbLeft: true, kerbRight: true },
-      { x: -115, y: 0.5, z: 70, width: 17.0, bankAngle: 0, surface: 'asphalt', kerbLeft: false, kerbRight: false },
-      { x: -185, y: 0.5, z: 70, width: 15.5, bankAngle: -0.18, surface: 'asphalt', kerbLeft: true, kerbRight: true },
+      // Infield Straightaway Jump #2 (Collinear along Z = 72 from +20 to -120)
+      { x: 20, y: 2.8, z: 72, width: 15.5, bankAngle: 0, surface: 'asphalt', kerbLeft: true, kerbRight: true },
+      { x: -45, y: 4.2, z: 72, width: 16.0, bankAngle: 0, surface: 'jump_ramp', kerbLeft: true, kerbRight: true },
+      { x: -115, y: 0.5, z: 72, width: 17.0, bankAngle: 0, surface: 'asphalt', kerbLeft: false, kerbRight: false },
 
-      // South-West Banked Bowl back to Start
-      { x: -225, y: 1.0, z: 115, width: 16.5, bankAngle: -0.32, surface: 'asphalt', kerbLeft: true, kerbRight: true },
+      // South-West S-Hook & Banked Bowl back to Start
+      { x: -175, y: 0.5, z: 48, width: 15.5, bankAngle: -0.26, surface: 'asphalt', kerbLeft: true, kerbRight: true },
+      { x: -225, y: 1.0, z: 105, width: 16.5, bankAngle: -0.32, surface: 'asphalt', kerbLeft: true, kerbRight: true },
       { x: -200, y: 0.5, z: 152, width: 15.5, bankAngle: -0.22, surface: 'asphalt', kerbLeft: true, kerbRight: true },
     ],
     hazards: [
-      { t: 0.14, lateralOffset: 0.35, type: 'water_puddle', radius: 3.6 },
-      { t: 0.45, lateralOffset: -0.3, type: 'water_puddle', radius: 3.6 },
-      { t: 0.65, lateralOffset: 0.25, type: 'mud_pit', radius: 4.0 },
-      { t: 0.72, lateralOffset: -0.25, type: 'mud_pit', radius: 4.0 },
-      { t: 0.90, lateralOffset: 0.3, type: 'water_puddle', radius: 3.5 },
+      { t: 0.08, lateralOffset: -0.32, type: 'rough_ground', radius: 3.9 },
+      { t: 0.15, lateralOffset: 0.34, type: 'water_puddle', radius: 3.6 },
+      { t: 0.22, lateralOffset: -0.28, type: 'rough_ground', radius: 3.8 },
+      { t: 0.42, lateralOffset: 0.32, type: 'rough_ground', radius: 4.0 },
+      { t: 0.48, lateralOffset: -0.30, type: 'water_puddle', radius: 3.6 },
+      { t: 0.62, lateralOffset: 0.28, type: 'mud_pit', radius: 4.0 },
+      { t: 0.68, lateralOffset: -0.30, type: 'rough_ground', radius: 4.2 },
+      { t: 0.74, lateralOffset: 0.28, type: 'mud_pit', radius: 4.0 },
+      { t: 0.81, lateralOffset: -0.32, type: 'rough_ground', radius: 4.0 },
+      { t: 0.90, lateralOffset: 0.30, type: 'water_puddle', radius: 3.5 },
+      { t: 0.95, lateralOffset: -0.28, type: 'rough_ground', radius: 3.8 },
     ],
     grandstands: [
-      { x: -80, y: 0.5, z: 180, rotationY: Math.PI },
-      { x: 0, y: 0.5, z: 180, rotationY: Math.PI },
-      { x: 80, y: 0.5, z: 180, rotationY: Math.PI },
+      { x: -80, y: 0.5, z: 182, rotationY: Math.PI },
+      { x: -10, y: 0.5, z: 182, rotationY: Math.PI },
     ],
     mountains: [
       { x: 235, z: -5, radius: 75, height: 26 },
       { x: -225, z: -110, radius: 75, height: 25 },
-      { x: -55, z: -120, radius: 58, height: 20 },
+      { x: -55, z: -115, radius: 55, height: 20 },
     ],
   },
 };

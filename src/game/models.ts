@@ -360,7 +360,11 @@ export interface BuiltTrackScene {
   group: THREE.Group;
   roadMaterial: THREE.MeshStandardMaterial;
   gantryLights: THREE.Mesh[];
-  staticHazards: { worldPos: THREE.Vector3; radius: number; type: 'mud_pit' | 'water_puddle' }[];
+  staticHazards: {
+    worldPos: THREE.Vector3;
+    radius: number;
+    type: 'mud_pit' | 'water_puddle' | 'rough_ground';
+  }[];
 }
 
 /**
@@ -982,8 +986,22 @@ export function buildTrackDiorama(
   instFoliage.computeBoundingSphere();
   group.add(instTrunks, instFoliage);
 
-  // 7. Static Track Hazards (Mud Pits & Water Puddles)
+  // 7. Static Track Hazards (Rough Ground Rubble Patches, Mud Pits & Water Puddles)
   const staticHazards: BuiltTrackScene['staticHazards'] = [];
+  const rubbleBumpGeo = new THREE.DodecahedronGeometry(0.42, 0);
+  const rubbleBumpMat = new THREE.MeshStandardMaterial({
+    color: 0x78350f,
+    roughness: 0.92,
+    metalness: 0.05,
+    flatShading: true,
+  });
+  const roughBorderMat = new THREE.MeshBasicMaterial({
+    color: 0xf59e0b,
+    side: THREE.DoubleSide,
+    polygonOffset: true,
+    polygonOffsetFactor: -3,
+    polygonOffsetUnits: -3,
+  });
 
   for (const h of baked.definition.hazards) {
     const sIdx = Math.floor(h.t * n) % n;
@@ -993,24 +1011,66 @@ export function buildTrackDiorama(
       .addScaledVector(s.right, h.lateralOffset * s.width * 0.5);
     worldPos.y += 0.09;
 
-    const puddleGeo = new THREE.CircleGeometry(h.radius, 20);
+    const hazardGroup = new THREE.Group();
+    hazardGroup.position.copy(worldPos);
+    const slopeQuat = new THREE.Quaternion().setFromUnitVectors(
+      new THREE.Vector3(0, 1, 0),
+      s.up
+    );
+    hazardGroup.quaternion.copy(slopeQuat);
+
+    const puddleGeo = new THREE.CircleGeometry(
+      h.radius,
+      h.type === 'rough_ground' ? 11 : 20
+    );
     puddleGeo.rotateX(-Math.PI / 2);
     const puddleMat = new THREE.MeshStandardMaterial({
-      color: h.type === 'mud_pit' ? 0x451a03 : 0x0284c7,
-      roughness: h.type === 'mud_pit' ? 0.65 : 0.08,
-      metalness: h.type === 'mud_pit' ? 0.1 : 0.85,
+      color:
+        h.type === 'rough_ground'
+          ? 0x92400e
+          : h.type === 'mud_pit'
+            ? 0x451a03
+            : 0x0284c7,
+      roughness:
+        h.type === 'rough_ground'
+          ? 0.95
+          : h.type === 'mud_pit'
+            ? 0.65
+            : 0.08,
+      metalness: h.type === 'water_puddle' ? 0.85 : 0.08,
+      flatShading: h.type === 'rough_ground',
       polygonOffset: true,
       polygonOffsetFactor: -2,
       polygonOffsetUnits: -2,
     });
     const puddleMesh = new THREE.Mesh(puddleGeo, puddleMat);
-    puddleMesh.position.copy(worldPos);
-    const slopeQuat = new THREE.Quaternion().setFromUnitVectors(
-      new THREE.Vector3(0, 1, 0),
-      s.up
-    );
-    puddleMesh.quaternion.copy(slopeQuat);
-    group.add(puddleMesh);
+    hazardGroup.add(puddleMesh);
+
+    if (h.type === 'rough_ground') {
+      // High-visibility dashed/ringed warning border + 3D low-poly rock bumps
+      const ringGeo = new THREE.RingGeometry(h.radius * 0.86, h.radius, 11);
+      ringGeo.rotateX(-Math.PI / 2);
+      const ringMesh = new THREE.Mesh(ringGeo, roughBorderMat);
+      ringMesh.position.y = 0.02;
+      hazardGroup.add(ringMesh);
+
+      for (let b = 0; b < 7; b++) {
+        const angle = (b / 7) * Math.PI * 2 + h.t * 12.0;
+        const dist = (b % 2 === 0 ? 0.32 : 0.62) * h.radius;
+        const bump = new THREE.Mesh(rubbleBumpGeo, rubbleBumpMat);
+        bump.position.set(
+          Math.cos(angle) * dist,
+          0.12,
+          Math.sin(angle) * dist
+        );
+        bump.scale.set(1.25, 0.55, 1.15);
+        bump.rotation.y = angle;
+        bump.castShadow = true;
+        hazardGroup.add(bump);
+      }
+    }
+
+    group.add(hazardGroup);
 
     staticHazards.push({
       worldPos: worldPos.clone(),

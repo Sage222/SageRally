@@ -17,6 +17,7 @@ export type SurfaceType =
   | 'boost'
   | 'grass'
   | 'mud'
+  | 'rough_ground'
   | 'oil';
 
 export type ControlType = 'gamepad' | 'keyboard_wasd' | 'keyboard_arrows' | 'ai';
@@ -39,7 +40,7 @@ export interface TrackHazardDef {
   t: number;
   /** Lateral offset from centerline (-1 to 1 of half-width) */
   lateralOffset: number;
-  type: 'mud_pit' | 'water_puddle';
+  type: 'mud_pit' | 'water_puddle' | 'rough_ground';
   radius: number;
 }
 

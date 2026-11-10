@@ -729,6 +729,14 @@ export default function App() {
                             <strong className="text-orange-400">
                               CAR BUMP (-10% SPD · 4s)
                             </strong>
+                          ) : car.surface === 'rough_ground' ? (
+                            <strong className="text-amber-400">
+                              ROUGH GROUND (-44% SPD!)
+                            </strong>
+                          ) : car.surface === 'mud' ? (
+                            <strong className="text-amber-500">
+                              MUD BOG (-40% SPD!)
+                            </strong>
                           ) : car.isAirborne ? (
                             <strong className="text-cyan-400">
                               AIRBORNE JUMP!
@@ -751,7 +759,9 @@ export default function App() {
                             </strong>
                           ) : (
                             <>
-                              <span className="capitalize">{car.surface}</span>
+                              <span className="capitalize">
+                                {car.surface.replace('_', ' ')}
+                              </span>
                               {Math.abs(car.bankAngleDeg) >= 4
                                 ? ` · ${Math.abs(car.bankAngleDeg)}° Bank`
                                 : ''}

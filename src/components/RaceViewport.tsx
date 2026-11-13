@@ -705,10 +705,14 @@ export const RaceViewport: React.FC<RaceViewportProps> = ({
     let raceClockStartMs = performance.now();
     let telemetryAccumulator = 0;
 
-    // 7. Software WebGL Fence Pacing + Standard 60Hz Loop
+    // 7. Software WebGL Fence Pacing + Strict 60 FPS Hardware Cap
     let frameId = 0;
     let isDisposed = false;
     const clock = new THREE.Clock();
+    const TARGET_FPS = 60;
+    const TARGET_FRAME_INTERVAL_MS = 1000 / TARGET_FPS;
+    const FRAME_GATE_THRESHOLD_MS = TARGET_FRAME_INTERVAL_MS - 0.5;
+    let lastFrameTimeMs = performance.now();
 
     function afterDraw(cb: () => void) {
       if (isDisposed) return;
@@ -732,9 +736,18 @@ export const RaceViewport: React.FC<RaceViewportProps> = ({
 
     function tick() {
       if (isDisposed) return;
+      const nowMs = performance.now();
+      if (!isSoftwareGl) {
+        const elapsedFrameMs = nowMs - lastFrameTimeMs;
+        if (elapsedFrameMs < FRAME_GATE_THRESHOLD_MS) {
+          frameId = requestAnimationFrame(tick);
+          return;
+        }
+        lastFrameTimeMs = nowMs - (elapsedFrameMs % TARGET_FRAME_INTERVAL_MS);
+      }
+
       const rawDelta = clock.getDelta();
       const dt = Math.min(rawDelta, 0.05);
-      const nowMs = performance.now();
 
       const {
         trackId: propTrackId,

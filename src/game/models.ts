@@ -1140,12 +1140,17 @@ export function buildTrackDiorama(
     const vz = posAttr.getZ(i);
     queryTrackSurface(vx, vz, baked, queryOut);
 
+    const nearestS = baked.samples[queryOut.closestIndex];
+    const roadHalfW = nearestS.width * 0.5;
+    const lowestBankedRoadY =
+      nearestS.position.y - Math.abs(nearestS.right.y) * roadHalfW;
+
     let y = queryOut.groundY;
-    if (queryOut.onRoad) {
-      // Depress terrain slightly beneath road ribbon so road never Z-fights
-      y -= 0.35;
+    if (Math.abs(queryOut.normalizedLateral) <= 1.38) {
+      // Depress terrain well beneath the lowest banked road edge across the full road + kerb corridor
+      // so coarse terrain triangles never bridge across or poke above banked/valley turns
+      y = Math.min(y, lowestBankedRoadY) - 0.75;
     } else {
-      const roadHalfW = baked.samples[queryOut.closestIndex].width * 0.5;
       const distFromEdge = Math.abs(queryOut.lateralDist) - roadHalfW;
 
       // Add sculpted mountain peaks outside the track corridor
@@ -1159,7 +1164,7 @@ export function buildTrackDiorama(
       }
 
       // Smoothly mask mountain boost near open road (keep road clear; tunnel ribs cover tunnel road)
-      const roadClearMask = THREE.MathUtils.smoothstep(distFromEdge, 2.5, 26.0);
+      const roadClearMask = THREE.MathUtils.smoothstep(distFromEdge, 4.5, 28.0);
       y += mountainBoost * roadClearMask;
 
       if (distFromEdge > 16) {
@@ -1168,7 +1173,7 @@ export function buildTrackDiorama(
           Math.max(0, (Math.hypot(vx, vz) - 235) * 0.22);
         y += hillNoise * roadClearMask;
       } else {
-        y -= 0.18;
+        y -= 0.45;
       }
     }
     posAttr.setY(i, y);
@@ -1178,9 +1183,9 @@ export function buildTrackDiorama(
       c = snowPeakColor;
     } else if (y > 6.5) {
       c = hillRockColor;
-    } else if (y < -1.0) {
+    } else if (y < -1.0 && Math.abs(queryOut.normalizedLateral) > 1.55) {
       c = valleyColor;
-    } else if (Math.abs(queryOut.normalizedLateral) < 1.45) {
+    } else if (Math.abs(queryOut.normalizedLateral) < 1.55) {
       c = shoulderDirtColor;
     }
 
@@ -1205,7 +1210,7 @@ export function buildTrackDiorama(
   terrainMesh.receiveShadow = true;
   group.add(terrainMesh);
 
-  // Diorama Table Pedestal Base
+  // Diorama Table Pedestal Base (positioned at y = -18.5 so its top face at y = -12.5 stays far below all valley & banked track sections)
   const baseGeo = new THREE.BoxGeometry(terrainSize + 8, 12, terrainSize + 8);
   const baseMat = new THREE.MeshStandardMaterial({
     color: 0x1e293b,
@@ -1213,7 +1218,7 @@ export function buildTrackDiorama(
     metalness: 0.2,
   });
   const baseMesh = new THREE.Mesh(baseGeo, baseMat);
-  baseMesh.position.y = -9.5;
+  baseMesh.position.y = -18.5;
   baseMesh.receiveShadow = true;
   group.add(baseMesh);
 

@@ -58,11 +58,36 @@ export interface MountainPeakDef {
   height: number;
 }
 
+export type TrackBiome =
+  | 'forest_valley'
+  | 'neon_stadium'
+  | 'desert_canyon'
+  | 'alpine_glacier'
+  | 'industrial_gorge';
+
+export type SceneryPropType =
+  | 'stadium'
+  | 'farm'
+  | 'windmill'
+  | 'modern_turbine'
+  | 'pit_building'
+  | 'alpine_chalet'
+  | 'industrial_plant';
+
+export interface SceneryPropDef {
+  type: SceneryPropType;
+  x: number;
+  z: number;
+  rotationY: number;
+  scale?: number;
+}
+
 export interface TrackDefinition {
   id: TrackId;
   name: string;
   subtitle: string;
   inspiration: string;
+  biome: TrackBiome;
   lengthMeters: number;
   defaultWeather: WeatherType;
   difficulty: 'Circuit' | 'Pro-Am' | 'Ironman' | 'Alpine' | 'Endurance';
@@ -71,6 +96,7 @@ export interface TrackDefinition {
   hazards: TrackHazardDef[];
   grandstands: GrandstandDef[];
   mountains: MountainPeakDef[];
+  sceneryProps: SceneryPropDef[];
   scenerySeed: number;
 }
 
@@ -107,6 +133,8 @@ export interface VehicleTelemetry {
   isCollisionSlowed: boolean;
   surface: SurfaceType;
   bankAngleDeg: number;
+  isDrifting: boolean;
+  driftAngleDeg: number;
   isSpinningOut: boolean;
   isDamaged: boolean;
   isBoosting: boolean;

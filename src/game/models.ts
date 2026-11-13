@@ -360,6 +360,7 @@ export interface BuiltTrackScene {
   group: THREE.Group;
   roadMaterial: THREE.MeshStandardMaterial;
   gantryLights: THREE.Mesh[];
+  animatedRotors: THREE.Object3D[];
   staticHazards: {
     worldPos: THREE.Vector3;
     radius: number;
@@ -368,11 +369,684 @@ export interface BuiltTrackScene {
 }
 
 /**
+ * 1. Composite Multi-Tiered Arena Stadium Complex (9 parts + twin floodlight towers)
+ */
+function createMegaStadium(weather: WeatherType): THREE.Group {
+  const group = new THREE.Group();
+
+  const concreteMat = new THREE.MeshStandardMaterial({
+    color: 0x334155,
+    roughness: 0.78,
+    metalness: 0.12,
+  });
+  const wallAccentMat = new THREE.MeshStandardMaterial({
+    color: 0x1e293b,
+    roughness: 0.6,
+    metalness: 0.25,
+  });
+  const canopyMat = new THREE.MeshStandardMaterial({
+    color: weather === 'snow' ? 0xe2e8f0 : 0xe11d48,
+    roughness: 0.35,
+    metalness: 0.4,
+  });
+  const glassBoothMat = new THREE.MeshStandardMaterial({
+    color: 0x38bdf8,
+    emissive: 0x0284c7,
+    emissiveIntensity: 0.65,
+    roughness: 0.15,
+    metalness: 0.85,
+  });
+  const steelMat = new THREE.MeshStandardMaterial({
+    color: 0x94a3b8,
+    roughness: 0.32,
+    metalness: 0.78,
+  });
+  const floodlightMat = new THREE.MeshStandardMaterial({
+    color: 0xfef08a,
+    emissive: 0xfef08a,
+    emissiveIntensity: 1.5,
+    roughness: 0.2,
+  });
+
+  const seatColors = [0xe11d48, 0xf59e0b, 0x0ea5e9, 0xf8fafc, 0x10b981];
+
+  // Foundation Plinth
+  const plinthGeo = new THREE.BoxGeometry(34, 2.2, 12.5);
+  const plinth = new THREE.Mesh(plinthGeo, wallAccentMat);
+  plinth.position.set(0, 0.3, -3.2);
+  plinth.receiveShadow = true;
+  group.add(plinth);
+
+  // 5 Stepped Seating Bowl Tiers + Colorful Spectator Bands
+  for (let tier = 0; tier < 5; tier++) {
+    const tierW = 32 - tier * 0.4;
+    const tierGeo = new THREE.BoxGeometry(tierW, 1.05, 1.9);
+    const tierMesh = new THREE.Mesh(tierGeo, concreteMat);
+    tierMesh.position.set(0, 1.2 + tier * 1.0, -tier * 1.55);
+    tierMesh.castShadow = true;
+    tierMesh.receiveShadow = true;
+    group.add(tierMesh);
+
+    const bandMat = new THREE.MeshStandardMaterial({
+      color: seatColors[tier % seatColors.length],
+      roughness: 0.5,
+      metalness: 0.15,
+    });
+    const bandGeo = new THREE.BoxGeometry(tierW - 1.2, 0.32, 0.45);
+    const bandMesh = new THREE.Mesh(bandGeo, bandMat);
+    bandMesh.position.set(0, 1.78 + tier * 1.0, -tier * 1.55 + 0.55);
+    group.add(bandMesh);
+  }
+
+  // Rear Stadium Concourse Wall & VIP Skybox Press Booth
+  const backWallGeo = new THREE.BoxGeometry(32.5, 6.8, 1.4);
+  const backWall = new THREE.Mesh(backWallGeo, wallAccentMat);
+  backWall.position.set(0, 3.8, -7.2);
+  backWall.castShadow = true;
+  group.add(backWall);
+
+  const vipBoxGeo = new THREE.BoxGeometry(14.0, 1.6, 2.2);
+  const vipBox = new THREE.Mesh(vipBoxGeo, glassBoothMat);
+  vipBox.position.set(0, 6.8, -5.8);
+  group.add(vipBox);
+
+  // Cantilevered Steel Roof Canopy
+  const roofGeo = new THREE.BoxGeometry(33.5, 0.45, 8.2);
+  const roofMesh = new THREE.Mesh(roofGeo, canopyMat);
+  roofMesh.position.set(0, 8.2, -3.6);
+  roofMesh.rotation.x = 0.16;
+  roofMesh.castShadow = true;
+  group.add(roofMesh);
+
+  // Twin Towering Floodlight Pylons on Stadium Flanks
+  const mastGeo = new THREE.CylinderGeometry(0.28, 0.42, 13.5, 8);
+  const bankFrameGeo = new THREE.BoxGeometry(3.2, 1.6, 0.45);
+  const bankGlowGeo = new THREE.BoxGeometry(2.9, 1.3, 0.15);
+
+  for (const side of [-1, 1]) {
+    const mast = new THREE.Mesh(mastGeo, steelMat);
+    mast.position.set(side * 17.5, 6.5, -5.5);
+    mast.castShadow = true;
+    group.add(mast);
+
+    const headGroup = new THREE.Group();
+    headGroup.position.set(side * 17.5, 13.2, -5.2);
+    headGroup.rotation.x = 0.38;
+    const frame = new THREE.Mesh(bankFrameGeo, wallAccentMat);
+    const glow = new THREE.Mesh(bankGlowGeo, floodlightMat);
+    glow.position.z = 0.22;
+    headGroup.add(frame, glow);
+    group.add(headGroup);
+  }
+
+  return group;
+}
+
+/**
+ * 2. Composite Country / Ranch Farmstead (Red Barn, Gambrel Roof, Grain Silo, Hay Bales & Corral Fence)
+ */
+function createFarmComplex(weather: WeatherType): THREE.Group {
+  const group = new THREE.Group();
+
+  const barnRedMat = new THREE.MeshStandardMaterial({
+    color: 0x991b1b,
+    roughness: 0.78,
+    metalness: 0.08,
+  });
+  const whiteTrimMat = new THREE.MeshStandardMaterial({
+    color: 0xf8fafc,
+    roughness: 0.55,
+    metalness: 0.1,
+  });
+  const roofSlateMat = new THREE.MeshStandardMaterial({
+    color: weather === 'snow' ? 0xe2e8f0 : 0x1e293b,
+    roughness: 0.65,
+    metalness: 0.15,
+  });
+  const siloMetalMat = new THREE.MeshStandardMaterial({
+    color: 0xcbd5e1,
+    roughness: 0.28,
+    metalness: 0.76,
+  });
+  const hayMat = new THREE.MeshStandardMaterial({
+    color: 0xd97706,
+    roughness: 0.9,
+    metalness: 0.02,
+  });
+  const woodFenceMat = new THREE.MeshStandardMaterial({
+    color: 0x78350f,
+    roughness: 0.88,
+    metalness: 0.05,
+  });
+
+  // Ground Pad
+  const padGeo = new THREE.BoxGeometry(18, 1.5, 14);
+  const padMesh = new THREE.Mesh(padGeo, woodFenceMat);
+  padMesh.position.set(0, -0.45, 0);
+  group.add(padMesh);
+
+  // Main Barn Hull
+  const barnGeo = new THREE.BoxGeometry(9.2, 5.2, 11.4);
+  const barnMesh = new THREE.Mesh(barnGeo, barnRedMat);
+  barnMesh.position.set(-2.0, 2.6, 0);
+  barnMesh.castShadow = true;
+  barnMesh.receiveShadow = true;
+  group.add(barnMesh);
+
+  // Gambrel Pitched Barn Roof (ExtrudeGeometry)
+  const roofShape = new THREE.Shape();
+  roofShape.moveTo(-5.2, 0);
+  roofShape.lineTo(-3.4, 2.2);
+  roofShape.lineTo(0, 3.4);
+  roofShape.lineTo(3.4, 2.2);
+  roofShape.lineTo(5.2, 0);
+  roofShape.closePath();
+
+  const roofGeo = new THREE.ExtrudeGeometry(roofShape, {
+    depth: 12.2,
+    bevelEnabled: false,
+  });
+  roofGeo.translate(0, 0, -6.1);
+  const roofMesh = new THREE.Mesh(roofGeo, roofSlateMat);
+  roofMesh.position.set(-2.0, 5.0, 0);
+  roofMesh.castShadow = true;
+  group.add(roofMesh);
+
+  // White Barn Double Doors & Hayloft Window
+  const doorGeo = new THREE.BoxGeometry(3.8, 3.4, 0.25);
+  const doorMesh = new THREE.Mesh(doorGeo, whiteTrimMat);
+  doorMesh.position.set(-2.0, 1.75, 5.72);
+  group.add(doorMesh);
+
+  const loftGeo = new THREE.BoxGeometry(1.8, 1.5, 0.28);
+  const loftMesh = new THREE.Mesh(loftGeo, whiteTrimMat);
+  loftMesh.position.set(-2.0, 6.1, 5.72);
+  group.add(loftMesh);
+
+  // Cylindrical Metallic Grain Silo + Dome Cap
+  const siloTowerGeo = new THREE.CylinderGeometry(2.1, 2.1, 10.5, 14);
+  const siloTower = new THREE.Mesh(siloTowerGeo, siloMetalMat);
+  siloTower.position.set(4.8, 5.2, -1.8);
+  siloTower.castShadow = true;
+  siloTower.receiveShadow = true;
+  group.add(siloTower);
+
+  const siloDomeGeo = new THREE.SphereGeometry(
+    2.1,
+    14,
+    10,
+    0,
+    Math.PI * 2,
+    0,
+    Math.PI * 0.5
+  );
+  const siloDome = new THREE.Mesh(siloDomeGeo, whiteTrimMat);
+  siloDome.position.set(4.8, 10.45, -1.8);
+  siloDome.castShadow = true;
+  group.add(siloDome);
+
+  // Golden Cylindrical Hay Bales in Farmyard
+  const baleGeo = new THREE.CylinderGeometry(0.85, 0.85, 1.4, 10);
+  baleGeo.rotateZ(Math.PI / 2);
+  const balePositions = [
+    [4.2, 0.85, 3.2],
+    [4.4, 0.85, 5.0],
+    [4.3, 2.35, 4.1],
+  ];
+  for (const [bx, by, bz] of balePositions) {
+    const bale = new THREE.Mesh(baleGeo, hayMat);
+    bale.position.set(bx, by, bz);
+    bale.rotation.y = bx * 0.4;
+    bale.castShadow = true;
+    group.add(bale);
+  }
+
+  // Timber Corral Fence Rails
+  const railGeo = new THREE.BoxGeometry(7.5, 0.18, 0.18);
+  const r1 = new THREE.Mesh(railGeo, woodFenceMat);
+  r1.position.set(3.5, 0.7, 6.4);
+  const r2 = new THREE.Mesh(railGeo, woodFenceMat);
+  r2.position.set(3.5, 1.25, 6.4);
+  group.add(r1, r2);
+
+  return group;
+}
+
+/**
+ * 3. Composite Spinning Windmill (Classic Dutch/Country Windmill OR Modern Wind Turbine)
+ */
+function createWindmill(
+  weather: WeatherType,
+  isModernTurbine: boolean
+): { group: THREE.Group; rotor: THREE.Group } {
+  const group = new THREE.Group();
+  const rotor = new THREE.Group();
+
+  if (isModernTurbine) {
+    const towerMat = new THREE.MeshStandardMaterial({
+      color: 0xf8fafc,
+      roughness: 0.25,
+      metalness: 0.45,
+    });
+    const baseMat = new THREE.MeshStandardMaterial({
+      color: 0x475569,
+      roughness: 0.75,
+      metalness: 0.15,
+    });
+    const beaconMat = new THREE.MeshStandardMaterial({
+      color: 0xef4444,
+      emissive: 0xef4444,
+      emissiveIntensity: 1.4,
+    });
+
+    const pad = new THREE.Mesh(new THREE.CylinderGeometry(2.4, 2.8, 1.6, 10), baseMat);
+    pad.position.y = 0.2;
+    group.add(pad);
+
+    const tower = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.55, 1.25, 16.5, 12),
+      towerMat
+    );
+    tower.position.y = 8.4;
+    tower.castShadow = true;
+    group.add(tower);
+
+    const nacelle = new THREE.Mesh(
+      new THREE.BoxGeometry(1.6, 1.6, 3.8),
+      towerMat
+    );
+    nacelle.position.set(0, 16.8, 0.2);
+    nacelle.castShadow = true;
+    group.add(nacelle);
+
+    const beacon = new THREE.Mesh(new THREE.SphereGeometry(0.28, 8, 8), beaconMat);
+    beacon.position.set(0, 17.8, -0.8);
+    group.add(beacon);
+
+    rotor.position.set(0, 16.8, 2.25);
+    const hub = new THREE.Mesh(new THREE.ConeGeometry(0.75, 1.6, 10), towerMat);
+    hub.rotation.x = Math.PI / 2;
+    rotor.add(hub);
+
+    const bladeGeo = new THREE.BoxGeometry(0.52, 7.6, 0.14);
+    bladeGeo.translate(0, 3.8, 0);
+    for (let b = 0; b < 3; b++) {
+      const bladePivot = new THREE.Group();
+      bladePivot.rotation.z = (b * Math.PI * 2) / 3;
+      const blade = new THREE.Mesh(bladeGeo, towerMat);
+      blade.rotation.y = 0.22;
+      blade.castShadow = true;
+      bladePivot.add(blade);
+      rotor.add(bladePivot);
+    }
+
+    group.add(rotor);
+    return { group, rotor };
+  }
+
+  // Classic Octagonal Dutch / Ranch Windmill with 4 Lattice Sails
+  const stoneMat = new THREE.MeshStandardMaterial({
+    color: 0x64748b,
+    roughness: 0.85,
+    metalness: 0.08,
+  });
+  const towerWoodMat = new THREE.MeshStandardMaterial({
+    color: 0x78350f,
+    roughness: 0.78,
+    metalness: 0.1,
+  });
+  const capMat = new THREE.MeshStandardMaterial({
+    color: weather === 'snow' ? 0xe2e8f0 : 0x1e293b,
+    roughness: 0.55,
+    metalness: 0.2,
+  });
+  const sailCanvasMat = new THREE.MeshStandardMaterial({
+    color: 0xfef3c7,
+    roughness: 0.65,
+    metalness: 0.05,
+    side: THREE.DoubleSide,
+  });
+
+  const plinth = new THREE.Mesh(
+    new THREE.CylinderGeometry(3.4, 3.8, 2.6, 8),
+    stoneMat
+  );
+  plinth.position.y = 0.8;
+  plinth.castShadow = true;
+  plinth.receiveShadow = true;
+  group.add(plinth);
+
+  const body = new THREE.Mesh(
+    new THREE.CylinderGeometry(1.75, 3.1, 9.8, 8),
+    towerWoodMat
+  );
+  body.position.y = 6.8;
+  body.castShadow = true;
+  body.receiveShadow = true;
+  group.add(body);
+
+  // Wooden Balcony Deck Ring
+  const deck = new THREE.Mesh(
+    new THREE.CylinderGeometry(3.5, 3.5, 0.32, 8),
+    sailCanvasMat
+  );
+  deck.position.y = 4.2;
+  group.add(deck);
+
+  // Domed Cap
+  const cap = new THREE.Mesh(
+    new THREE.SphereGeometry(1.85, 10, 8, 0, Math.PI * 2, 0, Math.PI * 0.55),
+    capMat
+  );
+  cap.position.y = 11.5;
+  cap.castShadow = true;
+  group.add(cap);
+
+  // 4-Blade Rotating Sail Assembly
+  rotor.position.set(0, 10.6, 2.05);
+  const hub = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.45, 0.45, 1.2, 8),
+    capMat
+  );
+  hub.rotation.x = Math.PI / 2;
+  rotor.add(hub);
+
+  const sparGeo = new THREE.BoxGeometry(0.24, 6.6, 0.22);
+  sparGeo.translate(0, 3.3, 0);
+  const sailGeo = new THREE.BoxGeometry(1.35, 5.4, 0.08);
+  sailGeo.translate(0.68, 3.6, 0.06);
+
+  for (let i = 0; i < 4; i++) {
+    const arm = new THREE.Group();
+    arm.rotation.z = (i * Math.PI) / 2;
+    const spar = new THREE.Mesh(sparGeo, towerWoodMat);
+    const sail = new THREE.Mesh(sailGeo, sailCanvasMat);
+    sail.rotation.y = 0.18;
+    sail.castShadow = true;
+    arm.add(spar, sail);
+    rotor.add(arm);
+  }
+
+  group.add(rotor);
+  return { group, rotor };
+}
+
+/**
+ * 4. Composite Pit Lane Garage & Cantilevered Race Control Tower
+ */
+function createPitBuildingAndTower(weather: WeatherType): THREE.Group {
+  const group = new THREE.Group();
+
+  const wallMat = new THREE.MeshStandardMaterial({
+    color: 0xe2e8f0,
+    roughness: 0.45,
+    metalness: 0.25,
+  });
+  const darkMetalMat = new THREE.MeshStandardMaterial({
+    color: 0x1e293b,
+    roughness: 0.55,
+    metalness: 0.45,
+  });
+  const awningMat = new THREE.MeshStandardMaterial({
+    color: 0x0284c7,
+    roughness: 0.35,
+    metalness: 0.2,
+  });
+  const glassGlowMat = new THREE.MeshStandardMaterial({
+    color: 0x38bdf8,
+    emissive: 0x0ea5e9,
+    emissiveIntensity: 0.75,
+    roughness: 0.12,
+    metalness: 0.9,
+  });
+
+  // Main Pit Garage Block
+  const garage = new THREE.Mesh(
+    new THREE.BoxGeometry(20.0, 4.4, 8.2),
+    wallMat
+  );
+  garage.position.set(0, 2.0, 0);
+  garage.castShadow = true;
+  garage.receiveShadow = true;
+  group.add(garage);
+
+  // 3 Dark Recessed Pit Garage Bays + Awning
+  for (let b = -1; b <= 1; b++) {
+    const bay = new THREE.Mesh(
+      new THREE.BoxGeometry(4.8, 3.0, 0.35),
+      darkMetalMat
+    );
+    bay.position.set(b * 6.0, 1.5, 4.05);
+    group.add(bay);
+  }
+
+  const awning = new THREE.Mesh(
+    new THREE.BoxGeometry(20.6, 0.45, 2.4),
+    awningMat
+  );
+  awning.position.set(0, 3.5, 4.8);
+  group.add(awning);
+
+  // Second-Floor Hospitality Glass Lounge
+  const lounge = new THREE.Mesh(
+    new THREE.BoxGeometry(18.0, 2.6, 6.8),
+    glassGlowMat
+  );
+  lounge.position.set(0, 5.4, -0.2);
+  group.add(lounge);
+
+  const roofCap = new THREE.Mesh(
+    new THREE.BoxGeometry(19.2, 0.5, 7.6),
+    darkMetalMat
+  );
+  roofCap.position.set(0, 6.9, -0.2);
+  group.add(roofCap);
+
+  // Cantilevered Race Control Tower on One End
+  const towerCore = new THREE.Mesh(
+    new THREE.BoxGeometry(5.2, 12.8, 5.2),
+    darkMetalMat
+  );
+  towerCore.position.set(7.2, 6.4, -0.5);
+  towerCore.castShadow = true;
+  group.add(towerCore);
+
+  const deckPod = new THREE.Mesh(
+    new THREE.BoxGeometry(7.4, 2.4, 6.6),
+    glassGlowMat
+  );
+  deckPod.position.set(6.8, 11.4, 0.4);
+  deckPod.castShadow = true;
+  group.add(deckPod);
+
+  const mast = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.12, 0.2, 4.5, 8),
+    wallMat
+  );
+  mast.position.set(7.2, 14.8, -0.5);
+  group.add(mast);
+
+  if (weather === 'snow') {
+    const snowCap = new THREE.Mesh(
+      new THREE.BoxGeometry(7.6, 0.35, 6.8),
+      wallMat
+    );
+    snowCap.position.set(6.8, 12.75, 0.4);
+    group.add(snowCap);
+  }
+
+  return group;
+}
+
+/**
+ * 5. Composite Alpine Timber Chalet (A-Frame Roof, Stone Chimney, Warm Glowing Cabin Windows)
+ */
+function createAlpineChalet(weather: WeatherType): THREE.Group {
+  const group = new THREE.Group();
+
+  const stoneMat = new THREE.MeshStandardMaterial({
+    color: 0x64748b,
+    roughness: 0.88,
+    metalness: 0.08,
+  });
+  const cedarMat = new THREE.MeshStandardMaterial({
+    color: 0x78350f,
+    roughness: 0.75,
+    metalness: 0.08,
+  });
+  const roofMat = new THREE.MeshStandardMaterial({
+    color: weather === 'snow' ? 0xf1f5f9 : 0x334155,
+    roughness: 0.65,
+    metalness: 0.1,
+  });
+  const warmWindowMat = new THREE.MeshStandardMaterial({
+    color: 0xfef08a,
+    emissive: 0xf59e0b,
+    emissiveIntensity: 1.15,
+    roughness: 0.2,
+  });
+
+  // Stone Plinth Foundation
+  const base = new THREE.Mesh(new THREE.BoxGeometry(8.6, 1.8, 9.6), stoneMat);
+  base.position.y = 0.4;
+  group.add(base);
+
+  // Timber Cabin Walls
+  const cabin = new THREE.Mesh(new THREE.BoxGeometry(7.8, 4.4, 8.8), cedarMat);
+  cabin.position.y = 3.2;
+  cabin.castShadow = true;
+  cabin.receiveShadow = true;
+  group.add(cabin);
+
+  // Steep Pitched A-Frame Roof
+  const roofShape = new THREE.Shape();
+  roofShape.moveTo(-4.8, 0);
+  roofShape.lineTo(0, 3.8);
+  roofShape.lineTo(4.8, 0);
+  roofShape.closePath();
+
+  const roofGeo = new THREE.ExtrudeGeometry(roofShape, {
+    depth: 10.2,
+    bevelEnabled: false,
+  });
+  roofGeo.translate(0, 0, -5.1);
+  const roof = new THREE.Mesh(roofGeo, roofMat);
+  roof.position.y = 5.1;
+  roof.castShadow = true;
+  group.add(roof);
+
+  // Stone Chimney Stack
+  const chimney = new THREE.Mesh(
+    new THREE.BoxGeometry(1.3, 6.2, 1.3),
+    stoneMat
+  );
+  chimney.position.set(2.8, 5.8, -1.5);
+  chimney.castShadow = true;
+  group.add(chimney);
+
+  // Warm Glowing Chalet Windows
+  const winGeo = new THREE.BoxGeometry(1.5, 1.3, 0.25);
+  for (const wx of [-1.8, 1.8]) {
+    const wFront = new THREE.Mesh(winGeo, warmWindowMat);
+    wFront.position.set(wx, 3.2, 4.38);
+    const wBack = new THREE.Mesh(winGeo, warmWindowMat);
+    wBack.position.set(wx, 3.2, -4.38);
+    group.add(wFront, wBack);
+  }
+
+  return group;
+}
+
+/**
+ * 6. Composite Industrial Power Plant & Cooling Towers
+ */
+function createIndustrialPlant(weather: WeatherType): THREE.Group {
+  const group = new THREE.Group();
+
+  const steelHallMat = new THREE.MeshStandardMaterial({
+    color: 0x475569,
+    roughness: 0.55,
+    metalness: 0.5,
+  });
+  const concreteTowerMat = new THREE.MeshStandardMaterial({
+    color: 0x94a3b8,
+    roughness: 0.82,
+    metalness: 0.1,
+  });
+  const hazardStripeMat = new THREE.MeshStandardMaterial({
+    color: 0xe11d48,
+    roughness: 0.45,
+    metalness: 0.2,
+  });
+  const beaconMat = new THREE.MeshStandardMaterial({
+    color: 0xf59e0b,
+    emissive: 0xf59e0b,
+    emissiveIntensity: 1.3,
+  });
+
+  // Main Turbine Hall
+  const hall = new THREE.Mesh(
+    new THREE.BoxGeometry(13.5, 6.2, 9.5),
+    steelHallMat
+  );
+  hall.position.set(-2.2, 2.8, 0);
+  hall.castShadow = true;
+  hall.receiveShadow = true;
+  group.add(hall);
+
+  // Twin Tapered Cooling Towers / Smokestacks
+  for (const tz of [-2.8, 2.8]) {
+    const tower = new THREE.Mesh(
+      new THREE.CylinderGeometry(2.1, 3.2, 11.5, 14),
+      concreteTowerMat
+    );
+    tower.position.set(5.4, 5.5, tz);
+    tower.castShadow = true;
+    tower.receiveShadow = true;
+    group.add(tower);
+
+    const rim = new THREE.Mesh(
+      new THREE.CylinderGeometry(2.2, 2.15, 0.8, 14),
+      hazardStripeMat
+    );
+    rim.position.set(5.4, 10.9, tz);
+    group.add(rim);
+  }
+
+  // Tall Flue Stack with Beacon
+  const stack = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.65, 0.95, 15.5, 10),
+    steelHallMat
+  );
+  stack.position.set(-6.2, 7.5, -2.5);
+  stack.castShadow = true;
+  group.add(stack);
+
+  const beacon = new THREE.Mesh(
+    new THREE.SphereGeometry(0.42, 8, 8),
+    beaconMat
+  );
+  beacon.position.set(-6.2, 15.4, -2.5);
+  group.add(beacon);
+
+  if (weather === 'snow') {
+    const roofSnow = new THREE.Mesh(
+      new THREE.BoxGeometry(13.6, 0.3, 9.6),
+      new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.7 })
+    );
+    roofSnow.position.set(-2.2, 6.0, 0);
+    group.add(roofSnow);
+  }
+
+  return group;
+}
+
+/**
  * Builds the 400%-scale 3D Diorama Circuit:
- * - Sculpted 620x620 3D terrain table with Mountains, Valley Dips, and Canyons
+ * - Sculpted 620x620 3D terrain table with distinct Biome Palettes, Mountains, Valley Dips, and Canyons
  * - Parametric 3D ribbon road with hills, banked corners, straightaway jump ramps, and red/white kerbs
  * - 3D Tunnel Portals, Arched Ribs, and glowing ceiling light strips
- * - Starting gantry with 3D countdown lights, grandstands, and InstancedMesh forest + boulders
+ * - Trackside Buildings, Farms, Spinning Windmills, Chalets, Industrial Plants, and Mega-Stadiums
  */
 export function buildTrackDiorama(
   baked: BakedTrack,
@@ -382,8 +1056,9 @@ export function buildTrackDiorama(
   const group = new THREE.Group();
   const samples = baked.samples;
   const n = samples.length;
+  const animatedRotors: THREE.Object3D[] = [];
 
-  // 1. Sculpted 620x620 3D Terrain Table with Mountains & Valley Basins
+  // 1. Sculpted 620x620 3D Terrain Table with Biome-Specific Palettes
   const terrainSize = 620;
   const terrainSegs = 136;
   const terrainGeo = new THREE.PlaneGeometry(
@@ -414,32 +1089,49 @@ export function buildTrackDiorama(
     isTunnel: false,
   };
 
-  const isDesert = baked.definition.id === 'ironman_baja';
-  const grassColor =
-    weather === 'snow'
-      ? new THREE.Color(0xdbeafe)
-      : isDesert
-        ? new THREE.Color(0xb47b44)
-        : weather === 'rain'
-          ? new THREE.Color(0x245634)
-          : new THREE.Color(0x2e6f40);
-  const hillRockColor =
-    weather === 'snow'
-      ? new THREE.Color(0x94a3b8)
-      : isDesert
-        ? new THREE.Color(0x9a4e24)
-        : new THREE.Color(0x57534e);
-  const snowPeakColor = new THREE.Color(0xf1f5f9);
-  const shoulderDirtColor =
-    weather === 'snow'
-      ? new THREE.Color(0xcbd5e1)
-      : new THREE.Color(0x78553a);
-  const valleyColor =
-    weather === 'snow'
-      ? new THREE.Color(0xbfdbfe)
-      : isDesert
-        ? new THREE.Color(0x854d0e)
-        : new THREE.Color(0x1e4628);
+  const biome = baked.definition.biome;
+
+  // Distinct Biome Palettes so every track looks visually unique even with randomized weather
+  let grassColor = new THREE.Color(0x2e6f40);
+  let hillRockColor = new THREE.Color(0x57534e);
+  let snowPeakColor = new THREE.Color(0xf1f5f9);
+  let shoulderDirtColor = new THREE.Color(0x78553a);
+  let valleyColor = new THREE.Color(0x1e4628);
+
+  if (biome === 'desert_canyon') {
+    grassColor = new THREE.Color(0xc27838);
+    hillRockColor = new THREE.Color(0x9a3412);
+    snowPeakColor = new THREE.Color(0xfed7aa);
+    shoulderDirtColor = new THREE.Color(0x92400e);
+    valleyColor = new THREE.Color(0x78350f);
+  } else if (biome === 'neon_stadium') {
+    grassColor = new THREE.Color(0x1b4d44);
+    hillRockColor = new THREE.Color(0x334155);
+    snowPeakColor = new THREE.Color(0xcbd5e1);
+    shoulderDirtColor = new THREE.Color(0x475569);
+    valleyColor = new THREE.Color(0x0f2926);
+  } else if (biome === 'alpine_glacier') {
+    grassColor = new THREE.Color(0x94a3b8);
+    hillRockColor = new THREE.Color(0x64748b);
+    snowPeakColor = new THREE.Color(0xf8fafc);
+    shoulderDirtColor = new THREE.Color(0xcbd5e1);
+    valleyColor = new THREE.Color(0x7dd3fc);
+  } else if (biome === 'industrial_gorge') {
+    grassColor = new THREE.Color(0x4d5e28);
+    hillRockColor = new THREE.Color(0x3f3f46);
+    snowPeakColor = new THREE.Color(0xd4d4d8);
+    shoulderDirtColor = new THREE.Color(0x57534e);
+    valleyColor = new THREE.Color(0x273314);
+  }
+
+  if (weather === 'snow') {
+    grassColor.lerp(new THREE.Color(0xdbeafe), 0.72);
+    shoulderDirtColor.lerp(new THREE.Color(0xcbd5e1), 0.7);
+    valleyColor.lerp(new THREE.Color(0xbfdbfe), 0.65);
+  } else if (weather === 'rain') {
+    grassColor.multiplyScalar(0.84);
+    hillRockColor.multiplyScalar(0.82);
+  }
 
   const mountains = baked.definition.mountains || [];
 
@@ -538,12 +1230,20 @@ export function buildTrackDiorama(
   const kerbIndices: number[] = [];
 
   const cAsphalt = new THREE.Color(weather === 'rain' ? 0x1e242d : 0x2c333f);
-  const cDirt = new THREE.Color(0x9a5b32);
+  const cDirt = new THREE.Color(
+    biome === 'desert_canyon' ? 0xb45309 : 0x9a5b32
+  );
   const cIce = new THREE.Color(0x93c5fd);
   const cBoost = new THREE.Color(0xf59e0b);
   const cJump = new THREE.Color(0x475569);
 
-  const kerbRed = new THREE.Color(0xe11d48);
+  const kerbRed = new THREE.Color(
+    biome === 'neon_stadium'
+      ? 0x06b6d4
+      : biome === 'alpine_glacier'
+        ? 0x2563eb
+        : 0xe11d48
+  );
   const kerbWhite = new THREE.Color(0xf8fafc);
 
   let runningDistance = 0;
@@ -736,7 +1436,12 @@ export function buildTrackDiorama(
     metalness: 0.25,
   });
   const tunnelCapMat = new THREE.MeshStandardMaterial({
-    color: weather === 'snow' ? 0x94a3b8 : isDesert ? 0x9a4e24 : 0x475569,
+    color:
+      weather === 'snow' || biome === 'alpine_glacier'
+        ? 0x94a3b8
+        : biome === 'desert_canyon'
+          ? 0x9a4e24
+          : 0x475569,
     roughness: 0.8,
     metalness: 0.1,
     flatShading: true,
@@ -875,24 +1580,121 @@ export function buildTrackDiorama(
   gantryGroup.add(pLeft, pRight, crossbar, checkerStrip);
   group.add(gantryGroup);
 
-  // 5. Composite Stadium Grandstands
+  const placedLandmarkPositions: Array<{ x: number; z: number; radius: number }> = [];
+
+  const findNearestOpenSampleIndex = (wx: number, wz: number): { index: number; sideSign: number } => {
+    queryTrackSurface(wx, wz, baked, queryOut);
+    let idx = queryOut.closestIndex;
+    const sideSign = queryOut.lateralDist >= 0 ? 1 : -1;
+    if (samples[idx].isTunnel) {
+      for (let offset = 1; offset < n / 2; offset++) {
+        const fwd = (idx + offset) % n;
+        if (!samples[fwd].isTunnel) {
+          idx = fwd;
+          break;
+        }
+        const bwd = (idx - offset + n) % n;
+        if (!samples[bwd].isTunnel) {
+          idx = bwd;
+          break;
+        }
+      }
+    }
+    return { index: idx, sideSign };
+  };
+
+  /**
+   * Verifies that all 9 points of a structure's oriented 3D bounding box (center, 4 corners, 4 edge midpoints)
+   * stay strictly clear of ALL road segments and kerbs across the entire track (including curved corners).
+   * Automatically steps outward or flips to the outside of a tight curve if needed.
+   */
+  const resolveSafeTracksidePlacement = (
+    sampleIdx: number,
+    preferredSideSign: number,
+    baseOffsetFromEdge: number,
+    halfWidthX: number,
+    frontExtentZ: number,
+    backExtentZ: number,
+    minClearanceFromRoadEdge: number
+  ): { x: number; z: number; groundY: number; rotY: number; sideSign: number } | null => {
+    const s = samples[sampleIdx];
+    const roadHalfW = s.width * 0.5;
+
+    for (const sideTry of [preferredSideSign, -preferredSideSign]) {
+      const rotY = Math.atan2(-s.right.x * sideTry, -s.right.z * sideTry);
+      const cosR = Math.cos(rotY);
+      const sinR = Math.sin(rotY);
+
+      for (let extraPush = 0; extraPush <= 16; extraPush += 1.5) {
+        const dist = roadHalfW + baseOffsetFromEdge + extraPush;
+        const cx = s.position.x + s.right.x * sideTry * dist;
+        const cz = s.position.z + s.right.z * sideTry * dist;
+
+        let allCornersClear = true;
+        const localXs = [-halfWidthX, -halfWidthX * 0.5, 0, halfWidthX * 0.5, halfWidthX];
+        const localZs = [frontExtentZ, (frontExtentZ - backExtentZ) * 0.5, -backExtentZ];
+
+        for (let ix = 0; ix < 5 && allCornersClear; ix++) {
+          for (let iz = 0; iz < 3; iz++) {
+            const lx = localXs[ix];
+            const lz = localZs[iz];
+            const wx = cx + lx * cosR + lz * sinR;
+            const wz = cz - lx * sinR + lz * cosR;
+            queryTrackSurface(wx, wz, baked, queryOut);
+            const nearestS = samples[queryOut.closestIndex];
+            const requiredDist = nearestS.width * 0.5 + minClearanceFromRoadEdge;
+            if (Math.abs(queryOut.lateralDist) < requiredDist) {
+              allCornersClear = false;
+              break;
+            }
+          }
+        }
+
+        if (allCornersClear) {
+          queryTrackSurface(cx, cz, baked, queryOut);
+          return {
+            x: cx,
+            z: cz,
+            groundY: Math.min(s.position.y, queryOut.groundY),
+            rotY,
+            sideSign: sideTry,
+          };
+        }
+      }
+    }
+    return null;
+  };
+
+  // 5. Composite Stadium Grandstands (Snapped Close to Track Verge with Full Corner Clearance)
   for (const gs of baked.definition.grandstands) {
+    const { index: gsSampleIdx, sideSign } = findNearestOpenSampleIndex(gs.x, gs.z);
+    const placement = resolveSafeTracksidePlacement(
+      gsSampleIdx,
+      sideSign,
+      5.5,
+      9.8,
+      1.2,
+      4.5,
+      4.2
+    );
+    if (!placement) continue;
+
     const gsGroup = new THREE.Group();
-    queryTrackSurface(gs.x, gs.z, baked, queryOut);
-    gsGroup.position.set(gs.x, queryOut.groundY, gs.z);
-    gsGroup.rotation.y = gs.rotationY;
+    gsGroup.position.set(placement.x, placement.groundY, placement.z);
+    gsGroup.rotation.y = placement.rotY;
+    placedLandmarkPositions.push({ x: placement.x, z: placement.z, radius: 14.5 });
 
     const stepMat = new THREE.MeshStandardMaterial({
       color: 0x334155,
       roughness: 0.7,
     });
     const canopyMat = new THREE.MeshStandardMaterial({
-      color: 0xe11d48,
+      color: biome === 'neon_stadium' ? 0x06b6d4 : 0xe11d48,
       roughness: 0.4,
     });
 
     for (let tier = 0; tier < 3; tier++) {
-      const tierGeo = new THREE.BoxGeometry(22, 0.9, 1.8);
+      const tierGeo = new THREE.BoxGeometry(18, 0.9, 1.8);
       const tierMesh = new THREE.Mesh(tierGeo, stepMat);
       tierMesh.position.set(0, 0.45 + tier * 0.9, -tier * 1.4);
       tierMesh.castShadow = true;
@@ -900,7 +1702,7 @@ export function buildTrackDiorama(
       gsGroup.add(tierMesh);
     }
 
-    const roofGeo = new THREE.BoxGeometry(23.0, 0.35, 5.6);
+    const roofGeo = new THREE.BoxGeometry(19.0, 0.35, 5.6);
     const roofMesh = new THREE.Mesh(roofGeo, canopyMat);
     roofMesh.position.set(0, 4.8, -1.4);
     roofMesh.rotation.x = 0.18;
@@ -908,6 +1710,113 @@ export function buildTrackDiorama(
     gsGroup.add(roofMesh);
 
     group.add(gsGroup);
+  }
+
+  // 5B. Trackside Aesthetic Landmarks (Buildings, Farms, Spinning Windmills, Stadiums, Chalets & Plants)
+  // Placed right beside the trackside shoulder while guaranteeing all 4 corners clear curved road sections!
+  const baseSceneryProps = [...(baked.definition.sceneryProps || [])];
+
+  const biomeLandmarkCycle: Array<
+    'stadium' | 'farm' | 'windmill' | 'pit_building' | 'alpine_chalet' | 'industrial_plant' | 'modern_turbine'
+  > =
+    biome === 'forest_valley'
+      ? ['farm', 'windmill', 'alpine_chalet', 'stadium', 'farm', 'windmill', 'pit_building']
+      : biome === 'neon_stadium'
+        ? ['stadium', 'pit_building', 'modern_turbine', 'industrial_plant', 'stadium', 'pit_building']
+        : biome === 'desert_canyon'
+          ? ['windmill', 'farm', 'industrial_plant', 'stadium', 'windmill', 'farm', 'pit_building']
+          : biome === 'alpine_glacier'
+            ? ['alpine_chalet', 'modern_turbine', 'stadium', 'pit_building', 'alpine_chalet', 'windmill']
+            : ['industrial_plant', 'modern_turbine', 'stadium', 'pit_building', 'industrial_plant', 'windmill'];
+
+  const stepInterval = Math.max(42, Math.floor(n / 18));
+  let cycleIdx = 0;
+  for (let i = 28; i < n - 24; i += stepInterval) {
+    const s = samples[i];
+    if (s.isTunnel) continue;
+    const sideSign = cycleIdx % 2 === 0 ? 1 : -1;
+    const probeX = s.position.x + s.right.x * sideSign * (s.width * 0.5 + 8.0);
+    const probeZ = s.position.z + s.right.z * sideSign * (s.width * 0.5 + 8.0);
+    const propType = biomeLandmarkCycle[cycleIdx % biomeLandmarkCycle.length];
+    cycleIdx++;
+    baseSceneryProps.push({
+      type: propType,
+      x: probeX,
+      z: probeZ,
+      rotationY: 0,
+      scale: 0.96,
+    });
+  }
+
+  for (const prop of baseSceneryProps) {
+    const { index: nearestIdx, sideSign } = findNearestOpenSampleIndex(prop.x, prop.z);
+    const propScale = prop.scale ?? 1.0;
+
+    // Bounding-box extents in local space (+Z is facing the road, -Z is away from the road)
+    const footprint =
+      prop.type === 'stadium'
+        ? { baseOffset: 6.4, halfW: 13.0, frontZ: 2.1, backZ: 8.2 }
+        : prop.type === 'windmill' || prop.type === 'modern_turbine'
+          ? { baseOffset: 5.5, halfW: 4.2, frontZ: 3.6, backZ: 3.6 }
+          : prop.type === 'alpine_chalet'
+            ? { baseOffset: 7.8, halfW: 5.0, frontZ: 4.8, backZ: 5.2 }
+            : prop.type === 'industrial_plant'
+              ? { baseOffset: 8.4, halfW: 9.2, frontZ: 5.0, backZ: 6.0 }
+              : prop.type === 'pit_building'
+                ? { baseOffset: 9.2, halfW: 10.5, frontZ: 6.2, backZ: 5.5 }
+                : { baseOffset: 9.6, halfW: 9.2, frontZ: 6.6, backZ: 7.0 }; // farm
+
+    const placement = resolveSafeTracksidePlacement(
+      nearestIdx,
+      sideSign,
+      footprint.baseOffset * propScale,
+      footprint.halfW * propScale,
+      footprint.frontZ * propScale,
+      footprint.backZ * propScale,
+      3.8
+    );
+    if (!placement) continue;
+
+    // Avoid overlapping another landmark already placed right next to this spot
+    let tooClose = false;
+    for (const placed of placedLandmarkPositions) {
+      const dx = placement.x - placed.x;
+      const dz = placement.z - placed.z;
+      if (dx * dx + dz * dz < 21 * 21) {
+        tooClose = true;
+        break;
+      }
+    }
+    if (tooClose) continue;
+
+    let propObj: THREE.Group;
+    if (prop.type === 'stadium') {
+      propObj = createMegaStadium(weather);
+    } else if (prop.type === 'farm') {
+      propObj = createFarmComplex(weather);
+    } else if (prop.type === 'windmill' || prop.type === 'modern_turbine') {
+      const wm = createWindmill(weather, prop.type === 'modern_turbine');
+      propObj = wm.group;
+      animatedRotors.push(wm.rotor);
+    } else if (prop.type === 'pit_building') {
+      propObj = createPitBuildingAndTower(weather);
+    } else if (prop.type === 'alpine_chalet') {
+      propObj = createAlpineChalet(weather);
+    } else {
+      propObj = createIndustrialPlant(weather);
+    }
+
+    propObj.position.set(placement.x, placement.groundY - 0.08, placement.z);
+    propObj.rotation.y = placement.rotY;
+    if (prop.scale) {
+      propObj.scale.setScalar(prop.scale);
+    }
+    group.add(propObj);
+    placedLandmarkPositions.push({
+      x: placement.x,
+      z: placement.z,
+      radius: Math.max(13.5, footprint.halfW + 2.5) * propScale,
+    });
   }
 
   // 6. InstancedMesh Low-Poly Pine Trees & Boulders Across the 400%-Scale Diorama
@@ -922,7 +1831,12 @@ export function buildTrackDiorama(
     roughness: 0.9,
   });
   const foliageMat = new THREE.MeshStandardMaterial({
-    color: weather === 'snow' ? 0xbfdbfe : 0x166534,
+    color:
+      weather === 'snow' || biome === 'alpine_glacier'
+        ? 0xbfdbfe
+        : biome === 'desert_canyon'
+          ? 0x4d7c0f
+          : 0x166534,
     roughness: 0.75,
     flatShading: true,
   });
@@ -946,12 +1860,23 @@ export function buildTrackDiorama(
     return (seed - 1) / 2147483646;
   };
 
-  for (let attempt = 0; attempt < 1200 && placedTrees < treeCount; attempt++) {
+  for (let attempt = 0; attempt < 1400 && placedTrees < treeCount; attempt++) {
     const tx = (rand() - 0.5) * 540;
     const tz = (rand() - 0.5) * 480;
     queryTrackSurface(tx, tz, baked, queryOut);
 
-    if (Math.abs(queryOut.normalizedLateral) > 1.85) {
+    if (Math.abs(queryOut.normalizedLateral) > 1.55) {
+      let insideLandmark = false;
+      for (const lm of placedLandmarkPositions) {
+        const dx = tx - lm.x;
+        const dz = tz - lm.z;
+        if (dx * dx + dz * dz < lm.radius * lm.radius) {
+          insideLandmark = true;
+          break;
+        }
+      }
+      if (insideLandmark) continue;
+
       const scale = 0.85 + rand() * 0.85;
       dummy.position.set(tx, queryOut.groundY - 0.1, tz);
       dummy.rotation.set(0, rand() * Math.PI * 2, 0);
@@ -961,10 +1886,12 @@ export function buildTrackDiorama(
       instTrunks.setMatrixAt(placedTrees, dummy.matrix);
       instFoliage.setMatrixAt(placedTrees, dummy.matrix);
 
-      if (weather === 'snow') {
+      if (weather === 'snow' || biome === 'alpine_glacier') {
         tintColor.setHSL(0.58, 0.35, 0.75 + (rand() - 0.5) * 0.15);
-      } else if (isDesert) {
-        tintColor.setHSL(0.28 + (rand() - 0.5) * 0.05, 0.45, 0.32 + (rand() - 0.5) * 0.08);
+      } else if (biome === 'desert_canyon') {
+        tintColor.setHSL(0.24 + (rand() - 0.5) * 0.06, 0.48, 0.32 + (rand() - 0.5) * 0.08);
+      } else if (biome === 'industrial_gorge') {
+        tintColor.setHSL(0.14 + (rand() - 0.5) * 0.08, 0.55, 0.28 + (rand() - 0.5) * 0.08);
       } else {
         tintColor.setHSL(
           0.36 + (rand() - 0.5) * 0.05,
@@ -1083,6 +2010,7 @@ export function buildTrackDiorama(
     group,
     roadMaterial,
     gantryLights,
+    animatedRotors,
     staticHazards,
   };
 }

@@ -445,6 +445,9 @@ export default function App() {
       setLastRoundPointsAwarded({});
       setFastestLapBonusSlot(null);
       setTrackId(firstTrack);
+      soundEngine.startTrackMusic(firstTrack);
+    } else {
+      soundEngine.startTrackMusic(trackId);
     }
     setRaceRestartToken((t) => t + 1);
     setRaceState('countdown');
@@ -459,6 +462,7 @@ export default function App() {
       const nextTrack = TRACK_ORDER[nextRound];
       setGpRoundIndex(nextRound);
       setTrackId(nextTrack);
+      soundEngine.startTrackMusic(nextTrack);
       setWeather(pickRandomWeather());
       setRaceRestartToken((t) => t + 1);
       setRaceState('countdown');
@@ -563,7 +567,7 @@ export default function App() {
                     ·
                   </span>
                   <span className="hidden xl:inline">
-                    Space: Gun (3/Lap) · E: Oil (2/Lap) · Shift/C: Nitro (3/Lap) · R: Reset
+                    Space: Gun (5/Lap) · E: Oil (2/Lap) · Shift/C: Nitro (3/Lap) · R: Reset
                   </span>
                 </div>
               </div>
@@ -643,9 +647,9 @@ export default function App() {
                           {car.isLastPlaceBoost && (
                             <span
                               className="text-[10px] font-mono font-bold text-emerald-400 whitespace-nowrap"
-                              title="4th Place Catch-Up Speed Boost (+10%)"
+                              title="4th Place Catch-Up Speed Boost (+15%)"
                             >
-                              +10% SPD
+                              +15% SPD
                             </span>
                           )}
                           {car.isLeaderPenalty && (
@@ -676,7 +680,7 @@ export default function App() {
                           </span>
                         </div>
 
-                        {/* Weapons & Nitro Readout: 3 Gun Shots, 2 Oil Slicks & 3 Nitro Boosts per Lap */}
+                        {/* Weapons & Nitro Readout: 5 Gun Shots, 2 Oil Slicks & 3 Nitro Boosts per Lap */}
                         <div className="flex items-center gap-2">
                           <span
                             className={`flex items-center gap-0.5 ${
@@ -684,7 +688,7 @@ export default function App() {
                                 ? 'text-amber-300'
                                 : 'text-slate-600'
                             }`}
-                            title="Forward Gun Shots (3 per lap)"
+                            title="Forward Gun Shots (5 per lap)"
                           >
                             <Crosshair className="w-3.5 h-3.5" />
                             {car.gunAmmo}/{car.maxGunAmmo}
@@ -723,7 +727,7 @@ export default function App() {
                             </strong>
                           ) : car.isDamaged ? (
                             <strong className="text-amber-400">
-                              WEAPON HIT (-42% SPD)
+                              WEAPON HIT (-42% SPD · 3.4s)
                             </strong>
                           ) : car.isCollisionSlowed ? (
                             <strong className="text-orange-400">
@@ -745,13 +749,17 @@ export default function App() {
                             <strong className="text-amber-300">
                               NITRO BOOST!
                             </strong>
+                          ) : car.isDrifting ? (
+                            <strong className="text-sky-300">
+                              DRIFTING! ({car.driftAngleDeg}°)
+                            </strong>
                           ) : car.isSlipstreaming ? (
                             <strong className="text-cyan-300">
                               SLIPSTREAM DRAFT (+15%)
                             </strong>
                           ) : car.isLastPlaceBoost ? (
                             <strong className="text-emerald-300">
-                              LAST-PLACE BOOST (+10%)
+                              LAST-PLACE BOOST (+15%)
                             </strong>
                           ) : car.isInTunnel ? (
                             <strong className="text-amber-200">
@@ -1069,7 +1077,7 @@ export default function App() {
                   Controls Reference
                 </div>
                 <p className="text-slate-400">
-                  <strong className="text-slate-200">Player 1 (WASD):</strong> W/S Throttle · A/D Steer · Space Gun (3/Lap) · E Oil (2/Lap) · Left Shift/C Nitro (3/Lap) · R Reset
+                  <strong className="text-slate-200">Player 1 (WASD):</strong> W/S Throttle · A/D Steer · Space Gun (5/Lap) · E Oil (2/Lap) · Left Shift/C Nitro (3/Lap) · R Reset
                 </p>
                 <p className="text-slate-400 mt-1">
                   <strong className="text-slate-200">Player 2 (Arrows):</strong> Up/Down Throttle · Left/Right Steer · R-Shift Gun · Enter Oil · R-Ctrl/M Nitro

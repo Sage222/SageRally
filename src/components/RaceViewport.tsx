@@ -53,6 +53,11 @@ interface SimVehicle {
   velocity: THREE.Vector3;
   vy: number;
   heading: number;
+  angularVel: number;
+  driftAngle: number;
+  driftDuration: number;
+  isDrifting: boolean;
+  skidCooldown: number;
   steerAngle: number;
   wheelSpinAngle: number;
   pitch: number;
@@ -158,7 +163,7 @@ const _camTarget = new THREE.Vector3();
 const _camDesiredPos = new THREE.Vector3();
 const _dummyObj = new THREE.Object3D();
 
-const MAX_GUN_SHOTS_PER_LAP = 3;
+const MAX_GUN_SHOTS_PER_LAP = 5;
 const MAX_OIL_SLICKS_PER_LAP = 2;
 const MAX_NITRO_PER_LAP = 3;
 
@@ -224,6 +229,8 @@ export const RaceViewport: React.FC<RaceViewportProps> = ({
       antialias: !isSoftwareGl,
       powerPreference: 'high-performance',
     });
+    // Disable gl.validateProgram() during shader setup to prevent WebGL2 sampler-unit validation false positives (Error 1282)
+    renderer.debug.checkShaderErrors = false;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.1;
@@ -239,10 +246,10 @@ export const RaceViewport: React.FC<RaceViewportProps> = ({
 
     // 2. Studio Environment Map via RoomEnvironment + PMREMGenerator
     const pmremGenerator = new THREE.PMREMGenerator(renderer);
-    scene.environment = pmremGenerator.fromScene(
-      new RoomEnvironment(),
-      0.04
-    ).texture;
+    const roomEnv = new RoomEnvironment();
+    const envRenderTarget = pmremGenerator.fromScene(roomEnv, 0.04);
+    scene.environment = envRenderTarget.texture;
+    roomEnv.dispose();
     pmremGenerator.dispose();
 
     const camera = new THREE.PerspectiveCamera(
@@ -354,8 +361,8 @@ export const RaceViewport: React.FC<RaceViewportProps> = ({
     }
 
     // Instanced Burst Particles (Sparks, Tire Smoke, Dirt Plumes, Slipstream Draft)
-    const maxParticles = 160;
-    const partGeo = new THREE.DodecahedronGeometry(0.28, 0);
+    const maxParticles = 260;
+    const partGeo = new THREE.DodecahedronGeometry(0.32, 0);
     const partMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
     const particleInstanced = new THREE.InstancedMesh(
       partGeo,
@@ -386,6 +393,74 @@ export const RaceViewport: React.FC<RaceViewportProps> = ({
     if (particleInstanced.instanceColor) {
       particleInstanced.instanceColor.needsUpdate = true;
     }
+
+    // Instanced Twin Rear-Tire Skid Marks Ring Buffer (Rubber on Tarmac / Carved Ruts on Dirt)
+    const maxSkidMarks = 900;
+    const skidGeo = new THREE.PlaneGeometry(0.46, 1.3);
+    skidGeo.rotateX(-Math.PI / 2);
+    const skidMat = new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0.68,
+      depthWrite: false,
+      polygonOffset: true,
+      polygonOffsetFactor: -2,
+      polygonOffsetUnits: -2,
+    });
+    const skidInstanced = new THREE.InstancedMesh(
+      skidGeo,
+      skidMat,
+      maxSkidMarks
+    );
+    skidInstanced.frustumCulled = false;
+    scene.add(skidInstanced);
+
+    let skidCursor = 0;
+    const _skidColor = new THREE.Color();
+    const clearSkidMarks = () => {
+      skidCursor = 0;
+      for (let i = 0; i < maxSkidMarks; i++) {
+        _dummyObj.position.set(0, -100, 0);
+        _dummyObj.scale.setScalar(0.001);
+        _dummyObj.updateMatrix();
+        skidInstanced.setMatrixAt(i, _dummyObj.matrix);
+        skidInstanced.setColorAt(i, _skidColor.setHex(0x0f172a));
+      }
+      skidInstanced.instanceMatrix.needsUpdate = true;
+      if (skidInstanced.instanceColor) {
+        skidInstanced.instanceColor.needsUpdate = true;
+      }
+    };
+    clearSkidMarks();
+
+    const stampTireSkidMark = (
+      wx: number,
+      wy: number,
+      wz: number,
+      upX: number,
+      upY: number,
+      upZ: number,
+      velAngle: number,
+      hexColor: number,
+      widthScale: number = 1.0
+    ) => {
+      _slopeNormal.set(upX, upY, upZ).normalize();
+      _forwardVec.set(Math.sin(velAngle), 0, Math.cos(velAngle)).normalize();
+      _xBasisVec.crossVectors(_slopeNormal, _forwardVec).normalize();
+      _forwardVec.crossVectors(_xBasisVec, _slopeNormal).normalize();
+      _rotMatrix.makeBasis(_xBasisVec, _slopeNormal, _forwardVec);
+      _dummyObj.quaternion.setFromRotationMatrix(_rotMatrix);
+      _dummyObj.position.set(wx, wy + 0.05, wz);
+      _dummyObj.scale.set(widthScale, 1, 1);
+      _dummyObj.updateMatrix();
+      skidInstanced.setMatrixAt(skidCursor, _dummyObj.matrix);
+      skidInstanced.setColorAt(skidCursor, _skidColor.setHex(hexColor));
+      skidCursor = (skidCursor + 1) % maxSkidMarks;
+      skidInstanced.instanceMatrix.needsUpdate = true;
+      if (skidInstanced.instanceColor) {
+        skidInstanced.instanceColor.needsUpdate = true;
+      }
+    };
 
     const spawnParticleBurst = (
       x: number,
@@ -452,6 +527,7 @@ export const RaceViewport: React.FC<RaceViewportProps> = ({
     let vehicles: SimVehicle[] = [];
 
     const applyAtmosphere = (w: WeatherType) => {
+      const biome = bakedTrack.definition.biome;
       if (w === 'rain') {
         const bg = new THREE.Color(0x1e293b);
         scene.background = bg;
@@ -473,11 +549,23 @@ export const RaceViewport: React.FC<RaceViewportProps> = ({
         weatherMat.color.setHex(0xffffff);
         weatherMat.size = 0.72;
       } else {
-        const bg = new THREE.Color(0x0f172a);
+        const bgHex =
+          biome === 'desert_canyon'
+            ? 0x2a1810
+            : biome === 'alpine_glacier'
+              ? 0x1e293b
+              : biome === 'neon_stadium'
+                ? 0x091526
+                : biome === 'industrial_gorge'
+                  ? 0x18181b
+                  : 0x0f172a;
+        const bg = new THREE.Color(bgHex);
         scene.background = bg;
-        scene.fog = new THREE.FogExp2(0x0f172a, 0.0016);
+        scene.fog = new THREE.FogExp2(bgHex, 0.0016);
         sunLight.intensity = 2.25;
-        sunLight.color.setHex(0xfffbeb);
+        sunLight.color.setHex(
+          biome === 'desert_canyon' ? 0xffedd5 : 0xfffbeb
+        );
         hemiLight.intensity = 0.8;
         weatherPoints.visible = false;
       }
@@ -500,6 +588,7 @@ export const RaceViewport: React.FC<RaceViewportProps> = ({
         o.active = false;
         o.mesh.visible = false;
       }
+      clearSkidMarks();
 
       bakedTrack = bakeTrack(TRACK_DEFINITIONS[tId]);
       builtDiorama = buildTrackDiorama(bakedTrack, roadTexture, w);
@@ -544,6 +633,11 @@ export const RaceViewport: React.FC<RaceViewportProps> = ({
           velocity: new THREE.Vector3(),
           vy: 0,
           heading,
+          angularVel: 0,
+          driftAngle: 0,
+          driftDuration: 0,
+          isDrifting: false,
+          skidCooldown: 0,
           steerAngle: 0,
           wheelSpinAngle: 0,
           pitch: 0,
@@ -593,10 +687,6 @@ export const RaceViewport: React.FC<RaceViewportProps> = ({
 
         applyVehicleOrientation(simVeh, s.up.x, s.up.y, s.up.z, 1.0);
         vehicles.push(simVeh);
-      }
-
-      if (!isSoftwareGl) {
-        renderer.compile(scene, camera);
       }
 
       currentTrackId = tId;
@@ -691,6 +781,7 @@ export const RaceViewport: React.FC<RaceViewportProps> = ({
         if (cInt !== lastCountdownInt && cInt >= 0 && cInt <= 3) {
           lastCountdownInt = cInt;
           soundEngine.playCountdownTone(cInt === 0);
+          soundEngine.startTrackMusic(propTrackId);
         }
 
         if (builtDiorama) {
@@ -717,6 +808,7 @@ export const RaceViewport: React.FC<RaceViewportProps> = ({
             v.lapStartTimeMs = startNow;
           }
           soundEngine.startEngineLoop();
+          soundEngine.startTrackMusic(propTrackId);
           cbCountdownDone();
         }
       } else if (propRaceState === 'racing' && builtDiorama) {
@@ -919,11 +1011,16 @@ export const RaceViewport: React.FC<RaceViewportProps> = ({
             const dx = aimPos.x - v.position.x;
             const dz = aimPos.z - v.position.z;
             const desiredHeading = Math.atan2(dx, dz);
-            let angleDiff = desiredHeading - v.heading;
+            // AI steers its actual travel trajectory vector toward the racing line while letting its chassis drift sideways
+            const aiTravelHeading =
+              curSpeed > 4.5
+                ? Math.atan2(v.velocity.x, v.velocity.z)
+                : v.heading;
+            let angleDiff = desiredHeading - aiTravelHeading;
             while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
             while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
 
-            steerInput = THREE.MathUtils.clamp(-angleDiff * 2.4, -1, 1);
+            steerInput = THREE.MathUtils.clamp(-angleDiff * 2.5, -1, 1);
             const sharpTurn = Math.abs(angleDiff) > 0.55;
             // Distinct rhythmic AI pace so AI cars don't clump at identical speeds
             const paceWave =
@@ -943,9 +1040,15 @@ export const RaceViewport: React.FC<RaceViewportProps> = ({
             const awayFromStartLine =
               raceElapsedSec > 8.0 && v.splineT >= 0.15 && v.splineT <= 0.92;
 
-            // Minimum allowed remaining ammo for current track sector so AI never dumps everything in Sector 1
+            // Minimum allowed remaining ammo for current track sector so AI spaces its 5 gunshots across the lap
             const minGunRemainingForSector =
-              v.splineT < 0.40 ? 2 : v.splineT < 0.68 ? 1 : 0;
+              v.splineT < 0.35
+                ? 3
+                : v.splineT < 0.62
+                  ? 2
+                  : v.splineT < 0.80
+                    ? 1
+                    : 0;
             const minOilRemainingForSector = v.splineT < 0.52 ? 1 : 0;
             const minNitroRemainingForSector =
               v.splineT < 0.38 ? 2 : v.splineT < 0.68 ? 1 : 0;
@@ -1111,14 +1214,14 @@ export const RaceViewport: React.FC<RaceViewportProps> = ({
         // Competitive Speed Multipliers:
         // - Front Car (1st Place): -5% speed penalty (0.95x)
         // - 3rd Place: +2.5% chaser pace (1.025x)
-        // - Last Place (4th Place): +10% speed boost (1.10x)
+        // - Last Place (4th Place): +15% speed boost (1.15x)
         // - Car-to-Car Collision: -10% speed penalty for 4 seconds (0.90x)
         const baseMaxSpeed = 34.2;
         const slipstreamSpeedMult = 1.0 + 0.15 * v.slipstreamCharge;
         const rankSpeedMult = v.isLeaderPenalty
           ? 0.95
           : v.isLastPlaceBoost
-            ? 1.1
+            ? 1.15
             : canDrive && raceElapsedSec > 4.0 && v.currentRank === 3
               ? 1.025
               : 1.0;
@@ -1133,13 +1236,39 @@ export const RaceViewport: React.FC<RaceViewportProps> = ({
           (v.boostTimer > 0 ? 1.32 : 1.0) *
           (v.damageSlowTimer > 0 ? 0.58 : 1.0);
 
-        // 1) Update Steering & Rotate Velocity Vector with Cornering Bite
-        const oldFwdX = Math.sin(v.heading);
-        const oldFwdZ = Math.cos(v.heading);
-        const oldFwdSpeed = v.velocity.x * oldFwdX + v.velocity.z * oldFwdZ;
+        // 1) SEGA RALLY / COLIN MCRAE 4WD DRIFT PHYSICS
+        // v.heading is the physical 3D chassis angle, while velAngle is the car's actual travel trajectory.
+        // In a corner at speed, steering pitches the chassis 33°–48° sideways relative to velAngle
+        // via a 2nd-order pendulum weight-transfer model (Scandinavian flick), while 4WD thrust and
+        // lateral tire bite carve velAngle smoothly around the corner apex!
+        const wrapAngle = (a: number): number => {
+          while (a > Math.PI) a -= Math.PI * 2;
+          while (a < -Math.PI) a += Math.PI * 2;
+          return a;
+        };
+
+        const prevSpeed = Math.hypot(v.velocity.x, v.velocity.z);
+        const prevFwdX = Math.sin(v.heading);
+        const prevFwdZ = Math.cos(v.heading);
+        const prevFwdProj = v.velocity.x * prevFwdX + v.velocity.z * prevFwdZ;
+        const isReversing = prevFwdProj < -0.8 && throttleInput < 0.05;
+
+        let velAngle =
+          prevSpeed > 1.2 && !isReversing
+            ? Math.atan2(v.velocity.x, v.velocity.z)
+            : v.heading;
+        let currentSlip = v.driftAngle;
+
+        if (v.skidCooldown > 0) v.skidCooldown -= dt;
+
+        let driftExitBoost = 0;
 
         if (v.spinOutTimer > 0) {
-          v.heading += 11.0 * dt;
+          v.heading = wrapAngle(v.heading + 11.0 * dt);
+          v.angularVel = 0;
+          v.driftDuration = 0;
+          v.isDrifting = true;
+          v.driftAngle = 0;
           v.velocity.multiplyScalar(Math.max(0, 1 - 1.6 * dt));
           if (Math.random() < 0.45) {
             spawnParticleBurst(
@@ -1152,90 +1281,214 @@ export const RaceViewport: React.FC<RaceViewportProps> = ({
               0.9
             );
           }
-        } else {
+        } else if (prevSpeed <= 5.5 || isReversing) {
+          // Low-speed Ackermann steering (grid launch, tight recovery, reversing)
           const isMovingOrStarting =
-            Math.abs(oldFwdSpeed) > 0.25 ||
-            throttleInput > 0.05 ||
-            brakeInput > 0.05;
+            prevSpeed > 0.2 || throttleInput > 0.05 || brakeInput > 0.05;
           if (isMovingOrStarting && Math.abs(steerInput) > 0.001) {
             const lowSpeedFactor = THREE.MathUtils.clamp(
               Math.max(
-                Math.abs(oldFwdSpeed) / 3.8,
+                prevSpeed / 3.5,
                 throttleInput * 0.75,
                 brakeInput * 0.6
               ),
               0.45,
               1.0
             );
-            const airSteerMult = v.isAirborne ? 0.22 : 1.0;
-            const turnRate = 3.05 * lowSpeedFactor * airSteerMult;
-            const reverseSign = oldFwdSpeed < -1.0 ? -1 : 1;
-            const deltaHeading = -steerInput * turnRate * reverseSign * dt;
-            v.heading += deltaHeading;
+            const reverseSign = isReversing ? -1 : 1;
+            const deltaH = -steerInput * 2.95 * lowSpeedFactor * reverseSign * dt;
+            v.heading = wrapAngle(v.heading + deltaH);
+          }
+          currentSlip = THREE.MathUtils.damp(currentSlip, 0, 12, dt);
+          v.angularVel = THREE.MathUtils.damp(v.angularVel, 0, 12, dt);
+          velAngle = wrapAngle(v.heading - currentSlip);
+          v.driftAngle = currentSlip;
+          v.driftDuration = 0;
+          v.isDrifting = false;
+        } else {
+          // High-Speed 4WD Rally Cornering & Power-Sliding (Sega Rally / Colin McRae Model)
+          const isLooseSurface =
+            v.surface === 'dirt' ||
+            v.surface === 'grass' ||
+            v.surface === 'rough_ground' ||
+            v.surface === 'mud';
+          const isIceOrSnow =
+            v.surface === 'ice' || propWeather === 'snow';
 
-            const corneringBite = v.isAirborne
-              ? 0.1
-              : THREE.MathUtils.clamp(0.84 * totalLateralGrip, 0.35, 0.92);
-            const rotAngle = deltaHeading * corneringBite;
-            const cosA = Math.cos(rotAngle);
-            const sinA = Math.sin(rotAngle);
-            const vx = v.velocity.x;
-            const vz = v.velocity.z;
-            v.velocity.x = vx * cosA + vz * sinA;
-            v.velocity.z = vz * cosA - vx * sinA;
+          const baseMaxSlip = isIceOrSnow
+            ? 0.86 // 49° on snow/ice
+            : v.surface === 'mud'
+              ? 0.80 // 46° on mud
+              : isLooseSurface
+                ? 0.76 // 43.5° on gravel/dirt stages
+                : propWeather === 'rain'
+                  ? 0.70 // 40° on wet tarmac
+                  : 0.62; // 35.5° on dry tarmac
+
+          const surfaceLoose = isIceOrSnow
+            ? 1.38
+            : isLooseSurface
+              ? 1.25
+              : propWeather === 'rain'
+                ? 1.16
+                : 1.08;
+
+          // Tapping brake while steering at speed acts like a Colin McRae handbrake flick
+          const handbrakeActive =
+            !v.isAirborne && brakeInput > 0.1 && Math.abs(steerInput) > 0.18;
+          const maxSlipAngle = handbrakeActive
+            ? Math.min(0.95, baseMaxSlip + 0.16)
+            : baseMaxSlip;
+
+          const speedSlideRatio = THREE.MathUtils.clamp(
+            (prevSpeed - 5.5) / 14.0,
+            0.25,
+            1.15
+          );
+
+          // Target sideways slip angle: steering Left (steerInput < 0) kicks nose Left (+currentSlip) and tail Right
+          const targetSlip =
+            Math.abs(steerInput) > 0.06
+              ? -steerInput * maxSlipAngle * speedSlideRatio
+              : 0;
+
+          // 2nd-order underdamped rotational spring-damper for authentic pendulum weight transfer (Scandinavian flick)
+          const slipStiffness = v.isAirborne
+            ? 2.5
+            : Math.abs(steerInput) > 0.06
+              ? (handbrakeActive ? 28.0 : 21.5) * surfaceLoose
+              : 16.5 * totalLateralGrip;
+          const slipDamping = v.isAirborne ? 4.0 : 6.4;
+
+          const slipAccel =
+            (targetSlip - currentSlip) * slipStiffness -
+            v.angularVel * slipDamping;
+          v.angularVel += slipAccel * dt;
+          currentSlip = THREE.MathUtils.clamp(
+            currentSlip + v.angularVel * dt,
+            -0.96,
+            0.96
+          );
+
+          // Evolve travel trajectory (velAngle) around the corner:
+          // Combines direct 4WD front-wheel turn-in (-steerInput) + lateral cornering bite from the sideways chassis (currentSlip)
+          const airSteerMult = v.isAirborne ? 0.22 : 1.0;
+          const gripTurnFactor = Math.max(0.68, totalLateralGrip);
+          const handbrakePivotBoost = handbrakeActive ? 1.18 : 1.0;
+
+          const directTurnRate =
+            -steerInput * 1.95 * gripTurnFactor * handbrakePivotBoost;
+          const driftCarveRate = currentSlip * 1.85 * gripTurnFactor;
+          const camberTurnAssist = _queryResult.bankAngle * 0.45;
+
+          const deltaVelAngle =
+            (directTurnRate + driftCarveRate + camberTurnAssist) *
+            airSteerMult *
+            dt;
+
+          velAngle = wrapAngle(velAngle + deltaVelAngle);
+          v.heading = wrapAngle(velAngle + currentSlip);
+          v.driftAngle = currentSlip;
+
+          const isSlidingNow =
+            !v.isAirborne &&
+            prevSpeed > 8.5 &&
+            Math.abs(currentSlip) > 0.18;
+
+          if (isSlidingNow) {
+            v.driftDuration += dt;
+            v.isDrifting = true;
+          } else {
+            if (v.driftDuration > 0.4 && prevSpeed > 10.5 && !v.isAirborne) {
+              // 4WD Corner-Exit Traction Hookup Surge
+              driftExitBoost = 2.5;
+              spawnParticleBurst(
+                v.position.x - Math.sin(v.heading) * 1.4,
+                v.position.y + 0.32,
+                v.position.z - Math.cos(v.heading) * 1.4,
+                6,
+                0xfbbf24,
+                5.0,
+                0.85
+              );
+            }
+            v.driftDuration = 0;
+            v.isDrifting = false;
           }
         }
 
+        // Front wheels counter-steer toward the travel trajectory (velAngle) during a drift!
+        const desiredWheelSteer = THREE.MathUtils.clamp(
+          Math.abs(v.driftAngle) > 0.15
+            ? -v.driftAngle * 0.72 - steerInput * 0.18
+            : -steerInput * 0.45,
+          -0.62,
+          0.62
+        );
         v.steerAngle = THREE.MathUtils.damp(
           v.steerAngle,
-          -steerInput * 0.45,
-          15,
+          desiredWheelSteer,
+          16,
           dt
         );
         v.rig.frontLeftPivot.rotation.y = v.steerAngle;
         v.rig.frontRightPivot.rotation.y = v.steerAngle;
 
-        // 2) Recompute Forward & Physical Right Vectors from Updated Heading
+        // 2) Recompute Chassis Forward & Right Vectors + Trajectory Speed
         const fwdX = Math.sin(v.heading);
         const fwdZ = Math.cos(v.heading);
         const rightX = -Math.cos(v.heading);
         const rightZ = Math.sin(v.heading);
+        let forwardSpeed = isReversing ? prevFwdProj : prevSpeed;
 
-        const forwardSpeed = v.velocity.x * fwdX + v.velocity.z * fwdZ;
-        const lateralSpeed = v.velocity.x * rightX + v.velocity.z * rightZ;
-
-        // 3) Apply Forward Acceleration, Slipstream, Rank Balancing, Collision Slowdown, Braking & Grip
+        // 3) Apply 4WD Thrust, Slipstream, Rank Balancing, Braking & Drift Scrub along Trajectory (velAngle)
         if (!v.isAirborne && v.spinOutTimer <= 0) {
           const slipstreamAccelMult = 1.0 + 0.22 * v.slipstreamCharge;
+          // Staying on throttle during a rally drift powers the 4WD system through the apex
+          const driftPowerMult =
+            v.isDrifting && throttleInput > 0.2 ? 1.08 : 1.0;
           const accelRate =
             (v.boostTimer > 0 ? 48.6 : 37.8) *
             slipstreamAccelMult *
             rankSpeedMult *
             collisionSlowMult *
+            driftPowerMult *
             (v.damageSlowTimer > 0 ? 0.65 : 1.0);
           const brakeRate = 34.0 * weatherGripMult;
 
           const slopeDot =
-            fwdX * _queryResult.tangentX + fwdZ * _queryResult.tangentZ;
+            Math.sin(velAngle) * _queryResult.tangentX +
+            Math.cos(velAngle) * _queryResult.tangentZ;
           const hillGravityAccel = -_queryResult.tangentY * slopeDot * 11.0;
 
-          let newFwdSpeed = forwardSpeed + hillGravityAccel * dt;
+          let newSpeed =
+            forwardSpeed + hillGravityAccel * dt + driftExitBoost;
 
           if (throttleInput > 0) {
-            newFwdSpeed += throttleInput * accelRate * dt;
-            if (canDrive && newFwdSpeed > 0.2 && !soundEngine.getMuted()) {
+            newSpeed += throttleInput * accelRate * dt;
+            if (canDrive && newSpeed > 0.2 && !soundEngine.getMuted()) {
               soundEngine.startEngineLoop();
             }
           }
           if (brakeInput > 0) {
-            if (newFwdSpeed > 1.0) {
-              newFwdSpeed -= brakeInput * brakeRate * dt;
+            if (newSpeed > 1.0) {
+              // Tapping brake to initiate a handbrake drift scrubs less speed than straight-line braking
+              const driftBrakeFactor =
+                Math.abs(steerInput) > 0.25 && newSpeed > 10.0 ? 0.52 : 1.0;
+              newSpeed -= brakeInput * brakeRate * driftBrakeFactor * dt;
             } else {
-              newFwdSpeed -= brakeInput * 14.4 * dt;
+              newSpeed -= brakeInput * 14.4 * dt;
             }
           }
 
-          const dragCoeff =
+          // Tire sideways scrub drag: minimal when holding throttle (4WD power slide), stronger when lifting off
+          const slipSin = Math.sin(Math.abs(v.driftAngle));
+          const driftScrubDrag =
+            v.isDrifting
+              ? slipSin * (throttleInput > 0.2 ? 0.16 : 0.48)
+              : 0;
+
+          const baseDragCoeff =
             v.surface === 'rough_ground'
               ? 3.2
               : v.surface === 'mud'
@@ -1245,24 +1498,28 @@ export const RaceViewport: React.FC<RaceViewportProps> = ({
                   : throttleInput === 0
                     ? 1.35
                     : 0.35 * (1 - 0.35 * v.slipstreamCharge);
-          newFwdSpeed *= Math.max(0, 1 - dragCoeff * dt);
-          newFwdSpeed = THREE.MathUtils.clamp(
-            newFwdSpeed,
+          const totalDrag = baseDragCoeff + driftScrubDrag;
+
+          newSpeed *= Math.max(0, 1 - totalDrag * dt);
+          newSpeed = THREE.MathUtils.clamp(
+            newSpeed,
             -12.6,
             effectiveMaxSpeed
           );
 
-          const camberAssist =
-            _queryResult.bankAngle * Math.abs(forwardSpeed) * 0.28;
-          const lateralDamp = Math.min(1, totalLateralGrip * 9.2 * dt);
-          const newLatSpeed =
-            (lateralSpeed + camberAssist * dt) * (1 - lateralDamp);
+          forwardSpeed = newSpeed;
 
-          v.velocity.x = fwdX * newFwdSpeed + rightX * newLatSpeed;
-          v.velocity.z = fwdZ * newFwdSpeed + rightZ * newLatSpeed;
+          // Update velocity vector along the travel trajectory (velAngle) so v.heading stays genuinely pitched sideways by v.driftAngle!
+          if (newSpeed >= 0) {
+            v.velocity.x = Math.sin(velAngle) * newSpeed;
+            v.velocity.z = Math.cos(velAngle) * newSpeed;
+          } else {
+            v.velocity.x = fwdX * newSpeed;
+            v.velocity.z = fwdZ * newSpeed;
+          }
 
           // Rough ground suspension chatter & gravel spray when not dodged
-          if (v.surface === 'rough_ground' && Math.abs(newFwdSpeed) > 3.0) {
+          if (v.surface === 'rough_ground' && Math.abs(newSpeed) > 3.0) {
             v.pitch += (Math.random() - 0.5) * 0.08;
             v.roll += (Math.random() - 0.5) * 0.08;
             if (canDrive && Math.random() < 0.35) {
@@ -1297,24 +1554,103 @@ export const RaceViewport: React.FC<RaceViewportProps> = ({
             );
           }
 
-          if (Math.abs(lateralSpeed) > 4.5 && Math.random() < 0.45) {
-            const pColor =
+          // Twin Rear-Tire Skid Marks & Rear-Wheel Gravel / Tire Smoke Roost During Drifting
+          if (v.isDrifting || v.spinOutTimer > 0) {
+            const rearAxleX = v.position.x - fwdX * 1.12;
+            const rearAxleZ = v.position.z - fwdZ * 1.12;
+            const wheelTrackHalf = 0.88;
+
+            const rlX = rearAxleX - rightX * wheelTrackHalf;
+            const rlZ = rearAxleZ - rightZ * wheelTrackHalf;
+            const rrX = rearAxleX + rightX * wheelTrackHalf;
+            const rrZ = rearAxleZ + rightZ * wheelTrackHalf;
+
+            const isLoose =
               v.surface === 'dirt' ||
               v.surface === 'mud' ||
-              v.surface === 'rough_ground'
-                ? 0x9a5b32
-                : propWeather === 'snow'
-                  ? 0xe2e8f0
-                  : 0xcbd5e1;
-            spawnParticleBurst(
-              v.position.x - fwdX * 1.2,
-              v.position.y + 0.2,
-              v.position.z - fwdZ * 1.2,
-              1,
-              pColor,
-              3.0,
-              0.75
-            );
+              v.surface === 'rough_ground' ||
+              v.surface === 'grass';
+
+            if (v.skidCooldown <= 0) {
+              v.skidCooldown = 0.018;
+              const skidHex = isLoose
+                ? 0x45220a
+                : v.surface === 'ice' || propWeather === 'snow'
+                  ? 0x94a3b8
+                  : 0x090d16;
+              const skidWidth = THREE.MathUtils.clamp(
+                0.92 + Math.abs(v.driftAngle) * 0.95,
+                0.92,
+                1.65
+              );
+              stampTireSkidMark(
+                rlX,
+                v.groundY,
+                rlZ,
+                _queryResult.upX,
+                _queryResult.upY,
+                _queryResult.upZ,
+                velAngle,
+                skidHex,
+                skidWidth
+              );
+              stampTireSkidMark(
+                rrX,
+                v.groundY,
+                rrZ,
+                _queryResult.upX,
+                _queryResult.upY,
+                _queryResult.upZ,
+                velAngle,
+                skidHex,
+                skidWidth
+              );
+            }
+
+            if (Math.random() < 0.88) {
+              const pColor = isLoose
+                ? 0xa1622f
+                : propWeather === 'snow' || v.surface === 'ice'
+                  ? 0xf1f5f9
+                  : 0xe2e8f0;
+              const smokeScale = THREE.MathUtils.clamp(
+                0.72 + Math.abs(v.driftAngle) * 0.85,
+                0.72,
+                1.35
+              );
+              spawnParticleBurst(
+                rlX,
+                v.position.y + 0.24,
+                rlZ,
+                1,
+                pColor,
+                3.4,
+                smokeScale
+              );
+              spawnParticleBurst(
+                rrX,
+                v.position.y + 0.24,
+                rrZ,
+                1,
+                pColor,
+                3.4,
+                smokeScale
+              );
+            }
+
+            // Subtle high-frequency tire scrub vibration on controller while drifting
+            if (
+              canDrive &&
+              v.config.controlType === 'gamepad' &&
+              Math.random() < 0.25
+            ) {
+              inputManager.triggerRumble(
+                v.config.gamepadIndex,
+                40,
+                0.08,
+                0.22
+              );
+            }
           }
         }
 
@@ -1332,7 +1668,7 @@ export const RaceViewport: React.FC<RaceViewportProps> = ({
         );
         v.closestSampleIdx = _queryResult.closestIndex;
 
-        const maxAllowedLatNorm = _queryResult.isTunnel ? 1.02 : 2.0;
+        const maxAllowedLatNorm = _queryResult.isTunnel ? 1.02 : 1.32;
         if (Math.abs(_queryResult.normalizedLateral) > maxAllowedLatNorm) {
           const s = bakedTrack.samples[_queryResult.closestIndex];
           const maxLat =
@@ -1415,7 +1751,8 @@ export const RaceViewport: React.FC<RaceViewportProps> = ({
         const targetPitch = v.isAirborne
           ? THREE.MathUtils.clamp(-v.vy * 0.035, -0.28, 0.28)
           : (brakeInput - throttleInput) * 0.055;
-        const targetRoll = steerInput * 0.09;
+        // Soft rally suspension rolls outward during a sideways drift
+        const targetRoll = steerInput * 0.085 - v.driftAngle * 0.22;
         v.pitch = THREE.MathUtils.damp(v.pitch, targetPitch, 12, dt);
         v.roll = THREE.MathUtils.damp(v.roll, targetRoll, 12, dt);
         v.rig.bodyGroup.rotation.x = v.pitch;
@@ -1644,7 +1981,11 @@ export const RaceViewport: React.FC<RaceViewportProps> = ({
           if (dx * dx + dz * dz < 2.45) {
             p.active = false;
             p.mesh.visible = false;
-            target.damageSlowTimer = 1.9;
+            // Extend gun hit slow-down time by 1.5 more seconds (1.9s -> 3.4s, or +1.5s if hit by a follow-up shot)
+            target.damageSlowTimer =
+              target.damageSlowTimer > 0 && target.damageSlowTimer < 3.0
+                ? target.damageSlowTimer + 1.5
+                : 3.4;
             target.velocity.multiplyScalar(0.55);
             soundEngine.playWeaponHit();
             inputManager.triggerRumble(
@@ -1724,6 +2065,14 @@ export const RaceViewport: React.FC<RaceViewportProps> = ({
         particleInstanced.instanceMatrix.needsUpdate = true;
         if (particleInstanced.instanceColor) {
           particleInstanced.instanceColor.needsUpdate = true;
+        }
+      }
+
+      // Rotate Trackside Windmill & Turbine Blades
+      if (builtDiorama && propRaceState !== 'paused') {
+        for (let r = 0; r < builtDiorama.animatedRotors.length; r++) {
+          builtDiorama.animatedRotors[r].rotation.z +=
+            dt * (1.55 + (r % 3) * 0.25);
         }
       }
 
@@ -1822,13 +2171,15 @@ export const RaceViewport: React.FC<RaceViewportProps> = ({
         );
       }
 
-      // Update Web Audio Engine Sound
+      // Update Web Audio Engine & Retro Circuit Soundtrack
       if (vehicles.length > 0) {
-        const leadSpeed = vehicles[0].velocity.length() / 34.2;
+        const v0 = vehicles[0];
+        const leadSpeed = v0.velocity.length() / 34.2;
         soundEngine.updateEngineRpm(
           leadSpeed,
-          vehicles[0].isAirborne,
-          propRaceState !== 'racing'
+          v0.isAirborne,
+          propRaceState !== 'racing',
+          propTrackId
         );
       }
 
@@ -1861,6 +2212,10 @@ export const RaceViewport: React.FC<RaceViewportProps> = ({
           isCollisionSlowed: v.collisionSlowTimer > 0,
           surface: v.surface,
           bankAngleDeg: Math.round(THREE.MathUtils.radToDeg(v.bankAngle)),
+          isDrifting: v.isDrifting,
+          driftAngleDeg: Math.round(
+            Math.abs(THREE.MathUtils.radToDeg(v.driftAngle))
+          ),
           isSpinningOut: v.spinOutTimer > 0,
           isDamaged: v.damageSlowTimer > 0,
           isBoosting: v.boostTimer > 0,
